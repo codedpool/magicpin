@@ -215,10 +215,57 @@ class InMemoryStore:
                 return False
             return True
 
+    # ─── bulk-load (used by WriteThroughStore.rehydrate) ─────────────────────
+
+    async def bulk_load_contexts(self, rows: list[dict[str, Any]]) -> None:
+        """Populate from Supabase rows. Bypasses version check."""
+        async with self._contexts_lock:
+            for row in rows:
+                self._contexts[(row["scope"], row["context_id"])] = {
+                    "version": row["version"],
+                    "payload": row["payload"],
+                    "delivered_at": row["delivered_at"],
+                    "stored_at": _utcnow().isoformat(),
+                }
+
+    async def bulk_load_conversations(self, rows: list[dict[str, Any]]) -> None:
+        async with self._conversations_lock:
+            for row in rows:
+                self._conversations[row["conversation_id"]] = {
+                    "conversation_id": row["conversation_id"],
+                    "merchant_id": row.get("merchant_id"),
+                    "customer_id": row.get("customer_id"),
+                    "trigger_id": row.get("trigger_id"),
+                    "send_as": row.get("send_as", "vera"),
+                    "turns": row.get("turns") or [],
+                    "auto_reply_count": row.get("auto_reply_count") or 0,
+                    "last_bot_body": row.get("last_bot_body"),
+                    "ended": bool(row.get("ended")),
+                    "end_reason": row.get("end_reason"),
+                    "created_at": row.get("created_at") or _utcnow().isoformat(),
+                    "updated_at": row.get("updated_at") or _utcnow().isoformat(),
+                }
+
+    async def bulk_load_suppressions(self, rows: list[dict[str, Any]]) -> None:
+        async with self._suppressions_lock:
+            for row in rows:
+                expires = row["expires_at"]
+                if isinstance(expires, str):
+                    expires = datetime.fromisoformat(expires.replace("Z", "+00:00"))
+                self._suppressions[(row["merchant_id"], row["suppression_key"])] = expires
+
+    async def bulk_load_blocks(self, rows: list[dict[str, Any]]) -> None:
+        async with self._blocked_lock:
+            for row in rows:
+                expires = row["expires_at"]
+                if isinstance(expires, str):
+                    expires = datetime.fromisoformat(expires.replace("Z", "+00:00"))
+                self._blocked[row["merchant_id"]] = expires
+
     # ─── lifecycle ───────────────────────────────────────────────────────────
 
     async def startup(self) -> None:
-        """Phase A+B: nothing to do. Phase C wires Supabase rehydrate here."""
+        """Phase A+B: nothing to do. Phase C wires Supabase rehydrate via WriteThroughStore."""
         pass
 
     async def shutdown(self) -> None:

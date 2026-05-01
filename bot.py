@@ -37,11 +37,14 @@ from core.models import (
 )
 from core.settings import settings
 from state.in_memory import InMemoryStore
+from state.write_through import WriteThroughStore
 
 # ─── globals ─────────────────────────────────────────────────────────────────
 
 START_TS = time.time()
-store = InMemoryStore()
+
+# Write-through to Supabase when enabled (default Phase C+); otherwise pure in-memory.
+store = WriteThroughStore() if settings.SUPABASE_ENABLED else InMemoryStore()
 
 
 # ─── lifespan ────────────────────────────────────────────────────────────────
