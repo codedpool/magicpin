@@ -36,6 +36,7 @@ from core.models import (
     TickResponse,
 )
 from core.settings import settings
+from llm.groq_client import get_groq
 from state.in_memory import InMemoryStore
 from state.write_through import WriteThroughStore
 
@@ -60,8 +61,15 @@ async def lifespan(_app: FastAPI):
         },
     )
     await store.startup()
+    groq = get_groq()
+    await groq.connect()
+    try:
+        await groq.prewarm()
+    except Exception as e:  # noqa: BLE001 — prewarm failure is non-fatal
+        logger.warning("vera.prewarm_failed_nonfatal", extra={"exc_type": type(e).__name__})
     yield
     logger.info("vera.shutdown")
+    await groq.close()
     await store.shutdown()
 
 
