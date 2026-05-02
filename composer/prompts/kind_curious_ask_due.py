@@ -30,6 +30,6 @@ TRIGGER KIND: curious_ask_due (weekly cadence — ask the merchant a question)
 - Don't chain multiple asks ("what's popular AND who's your top customer AND...")
 """
 
-LEVER_HINT = "asking_the_merchant (1.5×) + reciprocity + low_effort"
+LEVER_HINT = "asking_the_merchant (1.5×) + reciprocity + low_effort. THIS IS THE LEVER PRODUCTION VERA MOST UNDER-USES — make the ask CRISP and SPECIFIC, not generic. 'What's been most-asked this week?' beats 'How are things?'."
 
 DEFAULT_CTA_SHAPE = "open_ended"

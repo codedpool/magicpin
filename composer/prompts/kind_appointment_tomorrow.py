@@ -30,6 +30,6 @@ This is a CUSTOMER-facing message. send_as = merchant_on_behalf.
 - ONE CTA — binary CONFIRM/RESCHEDULE.
 """
 
-LEVER_HINT = "specificity (date + service) + helpful_prep_step + binary_commit"
+LEVER_HINT = "specificity (date + service) + helpful_prep_step + binary_commit. HONOR LANGUAGE_PREF strictly — hi-en mix needs Hindi tokens ('kal aapki appointment hai', 'time pehle confirm karein')."
 
 DEFAULT_CTA_SHAPE = "binary_yes_no"

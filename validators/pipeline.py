@@ -19,6 +19,7 @@ from typing import Any, Callable
 
 from validators import (
     cta_shape,
+    engagement,
     fabrication,
     language,
     length,
@@ -47,6 +48,7 @@ _PIPELINE: list[tuple[str, Callable[..., tuple[bool, str | None, str | None, str
     ("salutation", salutation.check),
     ("cta_shape", cta_shape.check),
     ("language", language.check),
+    ("engagement", engagement.check),  # NEW — flags zero-anchor bodies
     ("repetition", repetition.check),
     ("fabrication", fabrication.check),
 ]

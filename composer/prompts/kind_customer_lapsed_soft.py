@@ -29,6 +29,6 @@ This is a CUSTOMER-facing message. send_as = merchant_on_behalf.
 - ONE CTA.
 """
 
-LEVER_HINT = "warmth + low_friction + relationship_continuity"
+LEVER_HINT = "warmth + low_friction + relationship_continuity. HONOR LANGUAGE_PREF — hi-en mix means natural Hindi tokens ('apke liye', 'theek hai', 'jab time mile'). Pure English when hi-en is preferred = -2 merchant_fit."
 
 DEFAULT_CTA_SHAPE = "open_ended"

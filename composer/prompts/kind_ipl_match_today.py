@@ -34,6 +34,6 @@ TRIGGER KIND: ipl_match_today (DC vs MI etc., venue + city)
 - ONE CTA.
 """
 
-LEVER_HINT = "specificity (match + venue + time) + judgment + reciprocity"
+LEVER_HINT = "specificity (match + venue + time) + JUDGMENT (CONTRARIAN PLAY when warranted — Case Study 5 is THE highest-scoring exemplar in the rubric. If is_weeknight=false (Saturday IPL), -12% covers is the contrarian insight; SKIP match-night promo, push delivery instead). + reciprocity (specific deliverable + time-cap)."
 
 DEFAULT_CTA_SHAPE = "open_ended"

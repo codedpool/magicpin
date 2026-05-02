@@ -34,6 +34,6 @@ This is a CUSTOMER-facing message. send_as = merchant_on_behalf.
 - ONE CTA. "no commitment, no auto-charge" line should appear when offering free trial.
 """
 
-LEVER_HINT = "warmth + no_judgment_framing + tailored_to_past_goal + low_friction_trial"
+LEVER_HINT = "warmth + no_judgment_framing + tailored_to_past_goal + low_friction_trial + 'no commitment, no auto-charge' phrasing (Case Study 8 winner — removes 2 barriers in one line). HONOR LANGUAGE_PREF strictly."
 
 DEFAULT_CTA_SHAPE = "binary_yes_no"

@@ -32,6 +32,6 @@ TRIGGER KIND: perf_spike (a metric is UP — views, calls, leads)
   visible in conversation_history.
 """
 
-LEVER_HINT = "specificity + reciprocity + curiosity (about extending the win)"
+LEVER_HINT = "specificity + reciprocity + curiosity. ASKING-THE-MERCHANT: 'what do you think drove the spike?' is high-value — gets domain knowledge from owner + uses production-Vera's biggest-miss lever."
 
 DEFAULT_CTA_SHAPE = "open_ended"

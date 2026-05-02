@@ -34,6 +34,6 @@ This is a CUSTOMER-facing message. send_as = merchant_on_behalf.
 - ONE CTA.
 """
 
-LEVER_HINT = "specificity (days_to_wedding) + relationship_continuity + binary_commitment"
+LEVER_HINT = "specificity (days_to_wedding) + relationship_continuity + binary_commitment. HONOR LANGUAGE_PREF — wedding-time customers often prefer warm hi-en mix ('aapki wedding ke liye', 'apke skin-prep program ready hai')."
 
 DEFAULT_CTA_SHAPE = "binary_yes_no"

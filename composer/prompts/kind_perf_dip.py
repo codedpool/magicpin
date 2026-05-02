@@ -31,6 +31,6 @@ TRIGGER KIND: perf_dip (a metric is down — views, calls, CTR, or directions)
 - ONE CTA at the end.
 """
 
-LEVER_HINT = "anxiety_preemption + reframe + reciprocity (offer to do work)"
+LEVER_HINT = "anxiety_preemption + reframe + reciprocity. CONTRARIAN: if dip is seasonal/expected, recommend AGAINST 'fight the dip' default — divert ad spend to high-conversion months."
 
 DEFAULT_CTA_SHAPE = "open_ended"

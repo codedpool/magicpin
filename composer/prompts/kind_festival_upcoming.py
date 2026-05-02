@@ -30,6 +30,6 @@ TRIGGER KIND: festival_upcoming (Diwali / Holi / Eid / Christmas / Pongal etc.)
 - ONE CTA.
 """
 
-LEVER_HINT = "specificity (festival + days) + reciprocity + category fit"
+LEVER_HINT = "specificity (festival + days) + reciprocity + category_fit. CONTRARIAN PLAY when warranted: if merchant data shows the obvious festival promo conflicts with their state (e.g. clinical category + Diwali = NOT a sales push), recommend AGAINST it explicitly."
 
 DEFAULT_CTA_SHAPE = "open_ended"

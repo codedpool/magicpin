@@ -30,6 +30,6 @@ This is a CUSTOMER-facing message. send_as = merchant_on_behalf.
 - ONE CTA — multi-choice slot or open-ended.
 """
 
-LEVER_HINT = "warmth + specificity (trial_date + slot) + low_friction"
+LEVER_HINT = "warmth + specificity (trial_date + slot) + low_friction. HONOR LANGUAGE_PREF — if 'hi-en mix', mix in 2-4 Hindi words ('apke liye', 'jab time mile', 'theek hai'). Pure English when language_pref says hi-en mix loses 2 points."
 
 DEFAULT_CTA_SHAPE = "multi_choice_slot"
