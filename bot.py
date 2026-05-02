@@ -21,7 +21,7 @@ from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from core.logging import logger
 from core.models import (
@@ -344,20 +344,32 @@ async def reply(body: ReplyBody) -> Any:
     )
 
 
-# ─── root: friendly placeholder until Vera Console (Phase O) ─────────────────
+# ─── root: serve the Vera Console dashboard ─────────────────────────────────
+# Same submitted URL: judge calls /v1/*; hiring-manager-facing dashboard at /
 
-@app.api_route("/", methods=["GET", "HEAD"])
-async def root() -> dict[str, Any]:
-    return {
+import os as _os
+
+_DASHBOARD_PATH = _os.path.join(_os.path.dirname(__file__), "frontend", "dashboard.html")
+
+
+@app.get("/")
+async def root_dashboard():
+    if _os.path.exists(_DASHBOARD_PATH):
+        return FileResponse(_DASHBOARD_PATH, media_type="text/html")
+    return JSONResponse({
         "service": "Vera Bot",
         "version": settings.BOT_VERSION,
         "status": "online",
-        "endpoints": [
-            "GET /v1/healthz",
-            "GET /v1/metadata",
-            "POST /v1/context",
-            "POST /v1/tick",
-            "POST /v1/reply",
-        ],
-        "note": "Vera Console dashboard ships in Phase O.",
-    }
+        "note": "Dashboard not found at expected path.",
+    })
+
+
+@app.head("/")
+async def root_head():
+    return JSONResponse({"status": "ok"})
+
+
+# ─── Mount /admin/* read-only API for the dashboard ─────────────────────────
+from frontend.admin_router import router as _admin_router  # noqa: E402
+
+app.include_router(_admin_router)
