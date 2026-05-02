@@ -217,8 +217,8 @@ async def tick(body: TickBody) -> TickResponse:
 @app.post("/v1/reply")
 async def reply(body: ReplyBody) -> Any:
     """
-    Phase A+B: stub — returns wait 60s.
-    Phase H wires the 6-detector reply state machine.
+    Phase H: 6-detector reply state machine.
+    Returns one of: send / wait / end.
     """
     logger.info(
         "reply.received",
@@ -228,9 +228,35 @@ async def reply(body: ReplyBody) -> Any:
             "from_role": body.from_role,
         },
     )
-    return ReplyWait(
-        wait_seconds=60,
-        rationale="Phase A+B stub — reply handler wired in Phase H",
+
+    # Lookup contexts for this merchant/customer (None if not pushed yet)
+    merchant_payload = None
+    customer_payload = None
+    category_payload = None
+    if body.merchant_id:
+        merchant_payload = await store.get_context("merchant", body.merchant_id)
+        if merchant_payload:
+            cat_slug = merchant_payload.get("category_slug")
+            if cat_slug:
+                category_payload = await store.get_context("category", cat_slug)
+    if body.customer_id:
+        customer_payload = await store.get_context("customer", body.customer_id)
+
+    from reply.handler import handle_reply
+
+    return await handle_reply(
+        conversation_id=body.conversation_id,
+        message=body.message,
+        merchant_id=body.merchant_id,
+        customer_id=body.customer_id,
+        from_role=body.from_role,
+        received_at=body.received_at,
+        turn_number=body.turn_number,
+        store=store,
+        category=category_payload,
+        merchant=merchant_payload,
+        customer=customer_payload,
+        trigger=None,  # Phase I will look up the trigger by conversation.trigger_id
     )
 
 
