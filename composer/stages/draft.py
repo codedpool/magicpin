@@ -70,10 +70,13 @@ async def draft(
     plan_dict: dict[str, Any],
     interpreted_signals: list[str],
     digest_item: dict[str, Any] | None,
+    feedback: str | None = None,
 ) -> dict[str, Any]:
     """
     Run the DRAFT stage. Returns dict with body + rationale.
     Falls back to safe defaults on parse error so the pipeline still ships SOMETHING.
+
+    `feedback` is appended on re-DRAFT (when validators rejected the first attempt).
     """
     kind = trigger.get("kind", "default")
     kind_module = kind_router.route(kind)
@@ -152,6 +155,9 @@ async def draft(
         digest_item_block=digest_block,
         customer_block=customer_block,
     )
+
+    if feedback:
+        user_msg += f"\n\n=== FEEDBACK FROM PREVIOUS ATTEMPT ===\n{feedback}\n"
 
     groq = get_groq()
     raw = await groq.complete(

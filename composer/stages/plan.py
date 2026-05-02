@@ -44,8 +44,19 @@ LEVER PRIORITY (for picking compulsion_levers):
 - single_binary_commit is the default CTA family for action triggers
 - if customer context is provided, send_as=merchant_on_behalf
 
+CTA SHAPE GUIDANCE (pick the shape that matches the trigger family):
+- recall_due / appointment_reminder / chronic_refill_due  → "multi_choice_slot"
+  (because trigger.payload usually has 2 specific slots — Reply 1 for X, 2 for Y)
+- competitor_opened / festival_upcoming / curious_ask     → "open_ended"
+- supply_alert / regulation_change / renewal_due          → "binary_yes_no"
+- research_digest / cde_opportunity                        → "open_ended"
+- perf_dip / perf_spike / review_theme_emerged             → "open_ended"
+- milestone_reached                                         → "none" (informational only)
+
 LANGUAGE: choose based on merchant.identity.languages (or customer.identity.language_pref
-if customer is given). Default "en" if missing.
+if customer is given). Default "en" if missing. CRITICAL: if customer.identity.language_pref
+contains "hi", "te", "kn", "mr", or "ta", you MUST mix that script in (the body must
+contain at least one native-language word — NOT a full translation, just natural code-mix).
 
 REFUSE TO SEND when:
 - The trigger is too generic to anchor on a specific fact in contexts
