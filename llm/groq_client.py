@@ -245,11 +245,22 @@ class GroqClient:
             try:
                 err = r.json().get("error", {})
                 if err.get("code") == "json_validate_failed" and err.get("failed_generation"):
+                    fg = err["failed_generation"]
+                    # If the "failed generation" is just an error message about
+                    # token cap, it's not real content — retry on another model
+                    # rather than poisoning the parser with the error string.
+                    fg_lower = fg.lower()
+                    if "max completion tokens reached" in fg_lower or "max_tokens" in fg_lower:
+                        raise _RetryableGroqError(
+                            f"json_validate_max_tokens: {fg[:120]}"
+                        )
                     logger.warning(
                         "groq.json_validate_recovered",
-                        extra={"model": model, "len": len(err["failed_generation"])},
+                        extra={"model": model, "len": len(fg)},
                     )
-                    return err["failed_generation"]
+                    return fg
+            except _RetryableGroqError:
+                raise
             except (json.JSONDecodeError, AttributeError, KeyError):
                 pass
             raise GroqError(f"http_400: {r.text[:300]}")

@@ -69,10 +69,12 @@ DEFAULT_TEMPERATURE: dict[Purpose, float] = {
 }
 
 
-# Maximum output tokens per purpose (kept tight to stay inside free TPM)
+# Maximum output tokens per purpose. DRAFT/REFINE bumped to 1600 because
+# gpt-oss-120b is a reasoning model that consumes hidden CoT tokens before
+# the visible JSON — at 800 it ran out mid-document on heavy prompts.
 DEFAULT_MAX_TOKENS: dict[Purpose, int] = {
-    Purpose.DRAFT: 800,
-    Purpose.REFINE: 800,
+    Purpose.DRAFT: 1600,
+    Purpose.REFINE: 1600,
     Purpose.PLAN: 600,
     Purpose.SELF_SCORE: 600,
     Purpose.CLASSIFY: 200,
