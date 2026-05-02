@@ -35,7 +35,13 @@ def _parse_iso(s: str | None) -> datetime | None:
         return None
 
 
-async def should_send(trigger: dict[str, Any], store: Any) -> tuple[bool, str]:
+async def should_send(
+    trigger: dict[str, Any],
+    store: Any,
+    *,
+    merchant_payload: dict[str, Any] | None = None,
+    now_iso: str | None = None,
+) -> tuple[bool, str]:
     """
     Decide whether to compose for this trigger.
     Returns (ok, reason).
@@ -48,6 +54,7 @@ async def should_send(trigger: dict[str, Any], store: Any) -> tuple[bool, str]:
       e. Already MAX_SENDS_PER_MERCHANT_PER_24H sends in last 24h → no
       f. Last send >LONG_SILENCE_BACKOFF_HOURS ago + no reply since → no
       g. urgency=1 + recent negative engagement → no
+      h. urgency≤2 + outside best-time window → no (option C — see best_time.py)
       else → yes
     """
     merchant_id = trigger.get("merchant_id")
@@ -131,5 +138,19 @@ async def should_send(trigger: dict[str, Any], store: Any) -> tuple[bool, str]:
     urgency = trigger.get("urgency", 1)
     if urgency == 1 and has_recent_negative:
         return False, "low_urgency_negative_signal"
+
+    # h. Best-time-to-text (option C — category default + learned override)
+    #     Only enforced for urgency ≤ 2 to avoid blocking time-sensitive sends.
+    from pipeline.best_time import (
+        is_within_best_window,
+        get_merchant_reply_hours,
+        should_check_best_time,
+    )
+    if should_check_best_time(trigger):
+        cat_slug = (merchant_payload or {}).get("category_slug")
+        learned_hours = get_merchant_reply_hours(convs, merchant_id)
+        within, reason = is_within_best_window(now_iso, cat_slug, learned_hours)
+        if not within:
+            return False, f"outside_best_time({reason})"
 
     return True, "ok"

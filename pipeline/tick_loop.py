@@ -68,7 +68,8 @@ async def run_tick(
     if not available_triggers:
         return []
 
-    # 1. Resolve triggers + filter via should_send
+    # 1. Resolve triggers + filter via should_send (passes now_iso + merchant
+    #    payload so best-time-to-text gate can compute IST hour + category window)
     filtered: list[dict[str, Any]] = []
     skip_reasons: dict[str, int] = {}
     for trg_id in available_triggers:
@@ -76,7 +77,14 @@ async def run_tick(
         if not trigger:
             skip_reasons["not_found"] = skip_reasons.get("not_found", 0) + 1
             continue
-        ok, reason = await should_send(trigger, store)
+        # Pre-fetch merchant for category_slug (used by best_time check)
+        merchant_payload = None
+        mid = trigger.get("merchant_id")
+        if mid:
+            merchant_payload = await store.get_context("merchant", mid)
+        ok, reason = await should_send(
+            trigger, store, merchant_payload=merchant_payload, now_iso=now_iso
+        )
         if not ok:
             skip_reasons[reason] = skip_reasons.get(reason, 0) + 1
             continue
