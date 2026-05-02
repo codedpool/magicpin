@@ -166,6 +166,53 @@ async def extended_health() -> dict[str, Any]:
     }
 
 
+# ─── Variants (A/B-testable composer per engagement-design.md) ─────────────
+
+@router.get("/variants")
+async def variants_summary() -> dict[str, Any]:
+    """A/B variant inventory + observed distribution across sent turns.
+
+    Engagement-design.md requires the composer prompt be A/B-testable.
+    This endpoint exposes:
+      - registered: all variant ids in system_base.SYSTEM_BASE_VARIANTS
+      - default: the variant currently chosen at 100% (no live A/B yet)
+      - observed: variant counts seen in sent turns (parsed from rationale)
+    """
+    from composer.prompts.system_base import SYSTEM_BASE_DEFAULT, list_variants
+    store = _get_store()
+
+    if hasattr(store, "all_conversations"):
+        convs = await store.all_conversations()
+    elif hasattr(store, "memory"):
+        convs = await store.memory.all_conversations()
+    else:
+        convs = []
+
+    observed: dict[str, int] = {}
+    for conv in convs:
+        for turn in (conv.get("turns") or []):
+            if (turn.get("from") or "").lower() not in ("vera", "merchant_on_behalf"):
+                continue
+            rationale = turn.get("rationale") or ""
+            for token in rationale.split():
+                if token.startswith("variant="):
+                    vid = token.split("=", 1)[1].strip()
+                    observed[vid] = observed.get(vid, 0) + 1
+                    break
+
+    return {
+        "registered": list_variants(),
+        "default": SYSTEM_BASE_DEFAULT,
+        "active_routing": "100% → " + SYSTEM_BASE_DEFAULT,
+        "observed_in_sent_turns": observed,
+        "note": (
+            "A/B-testable architecture per engagement-design.md. Currently "
+            "1 variant active. Production rollout: register new variants "
+            "in system_base.py + update composer.choose_variant() routing."
+        ),
+    }
+
+
 # ─── Architecture (static text — for the dashboard's last tab) ──────────────
 
 @router.get("/architecture")
