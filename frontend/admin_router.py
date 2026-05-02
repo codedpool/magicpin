@@ -1,40 +1,24 @@
 """
 /admin/* read-only endpoints powering the Vera Console dashboard.
 
-Auth: HTTP Basic with ADMIN_PASSWORD env var. Username can be anything
-(unused), just the password is checked. The /v1/* endpoints (which the
-judge calls) DO NOT require auth — they're entirely separate.
+PUBLIC by design: these endpoints are read-only (GET only) and expose only
+synthetic challenge data. Anyone visiting the public URL can open the
+dashboard. The /v1/* judge endpoints are entirely separate and unaffected.
+
+If we ever needed to gate this (e.g., for real merchant data post-challenge),
+add HTTPBasic via core.settings.ADMIN_PASSWORD.
 """
 
 from __future__ import annotations
 
-import secrets
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi import APIRouter, HTTPException
 
 from core.settings import settings
 
 
 router = APIRouter(prefix="/admin", tags=["admin-readonly"])
-security = HTTPBasic()
-
-
-def _check_auth(credentials: HTTPBasicCredentials = Depends(security)) -> str:
-    """Verify the admin password. Returns the username (for log enrichment)."""
-    if not settings.ADMIN_PASSWORD:
-        raise HTTPException(
-            status_code=503,
-            detail="ADMIN_PASSWORD not configured",
-        )
-    if not secrets.compare_digest(credentials.password, settings.ADMIN_PASSWORD):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Basic"},
-        )
-    return credentials.username or "admin"
 
 
 def _get_store():
@@ -46,7 +30,7 @@ def _get_store():
 # ─── Conversations ──────────────────────────────────────────────────────────
 
 @router.get("/conversations")
-async def list_conversations(_user: str = Depends(_check_auth)) -> dict[str, Any]:
+async def list_conversations() -> dict[str, Any]:
     store = _get_store()
     if hasattr(store, "all_conversations"):
         convs = await store.all_conversations()
@@ -75,10 +59,7 @@ async def list_conversations(_user: str = Depends(_check_auth)) -> dict[str, Any
 
 
 @router.get("/conversations/{conversation_id}")
-async def get_conversation(
-    conversation_id: str,
-    _user: str = Depends(_check_auth),
-) -> dict[str, Any]:
+async def get_conversation(conversation_id: str) -> dict[str, Any]:
     store = _get_store()
     conv = await store.get_conversation(conversation_id)
     if not conv:
@@ -89,7 +70,7 @@ async def get_conversation(
 # ─── Contexts ───────────────────────────────────────────────────────────────
 
 @router.get("/contexts")
-async def list_contexts(_user: str = Depends(_check_auth)) -> dict[str, Any]:
+async def list_contexts() -> dict[str, Any]:
     store = _get_store()
     summary = {}
     for scope in ("category", "merchant", "customer", "trigger"):
@@ -109,11 +90,7 @@ async def list_contexts(_user: str = Depends(_check_auth)) -> dict[str, Any]:
 
 
 @router.get("/contexts/{scope}/{context_id}")
-async def get_context(
-    scope: str,
-    context_id: str,
-    _user: str = Depends(_check_auth),
-) -> dict[str, Any]:
+async def get_context(scope: str, context_id: str) -> dict[str, Any]:
     store = _get_store()
     payload = await store.get_context(scope, context_id)
     if not payload:
@@ -124,7 +101,7 @@ async def get_context(
 # ─── Suppressions / blocked ─────────────────────────────────────────────────
 
 @router.get("/suppressions")
-async def list_suppressions(_user: str = Depends(_check_auth)) -> dict[str, Any]:
+async def list_suppressions() -> dict[str, Any]:
     store = _get_store()
     if hasattr(store, "memory"):
         sup = store.memory._suppressions
@@ -148,7 +125,7 @@ async def list_suppressions(_user: str = Depends(_check_auth)) -> dict[str, Any]
 # ─── Health (extended) ──────────────────────────────────────────────────────
 
 @router.get("/health")
-async def extended_health(_user: str = Depends(_check_auth)) -> dict[str, Any]:
+async def extended_health() -> dict[str, Any]:
     import time as _t
     from bot import START_TS
     store = _get_store()
@@ -192,7 +169,7 @@ async def extended_health(_user: str = Depends(_check_auth)) -> dict[str, Any]:
 # ─── Architecture (static text — for the dashboard's last tab) ──────────────
 
 @router.get("/architecture")
-async def architecture(_user: str = Depends(_check_auth)) -> dict[str, str]:
+async def architecture() -> dict[str, str]:
     return {
         "mermaid": """flowchart TD
   Judge[Judge Harness] -->|POST /v1/context| Bot

@@ -46,24 +46,21 @@
   </div>
 </header>
 
-<!-- Auth gate -->
-<div x-show="!authed" class="max-w-md mx-auto mt-32 card rounded-xl p-8">
-  <h2 class="text-xl mb-4">Admin login</h2>
-  <p class="muted text-sm mb-4">Enter the admin password to view the console. The judge's <span class="mono accent">/v1/*</span> endpoints don't need auth.</p>
-  <input type="password" x-model="password" @keydown.enter="login()"
-         placeholder="ADMIN_PASSWORD"
-         class="w-full px-3 py-2 rounded bg-gray-900 border border-gray-700 mb-3" />
-  <button @click="login()" class="w-full px-3 py-2 rounded accent-bg font-semibold">Sign in</button>
-  <p x-show="loginError" class="red text-sm mt-3" x-text="loginError"></p>
+<!-- Intro banner — explains what this is to anyone landing here -->
+<div class="px-6 py-3 border-b border-gray-800 muted text-sm">
+  <strong class="accent">What this is:</strong> read-only inspector for a live merchant-engagement bot built for the magicpin AI Challenge.
+  The judge hits <span class="mono accent">/v1/healthz</span>, <span class="mono accent">/v1/context</span>,
+  <span class="mono accent">/v1/tick</span>, <span class="mono accent">/v1/reply</span>, <span class="mono accent">/v1/metadata</span>.
+  This dashboard renders whatever state the bot is currently holding. All data here is synthetic challenge data.
 </div>
 
-<!-- Main content (visible after auth) -->
-<div x-show="authed" class="px-6 py-6 max-w-7xl mx-auto">
+<!-- Main content -->
+<div class="px-6 py-6 max-w-7xl mx-auto">
 
   <!-- Tabs -->
   <nav class="flex gap-2 mb-6 flex-wrap">
     <template x-for="t in tabs" :key="t.id">
-      <button @click="tab = t.id" :class="tab === t.id ? 'tab-active' : 'card'"
+      <button @click="onTabChange(t.id)" :class="tab === t.id ? 'tab-active' : 'card'"
               class="px-4 py-2 rounded text-sm font-medium" x-text="t.label"></button>
     </template>
   </nav>
@@ -74,7 +71,9 @@
       <h2 class="text-lg accent">Live Conversations</h2>
       <button @click="loadConversations()" class="chip">refresh</button>
     </div>
-    <p x-show="conversations.length === 0" class="muted">No conversations yet. The judge will populate this when /v1/tick or /v1/reply fires.</p>
+    <p x-show="conversations.length === 0" class="muted">
+      No conversations yet. The judge will populate this when <span class="mono">/v1/tick</span> or <span class="mono">/v1/reply</span> fires.
+    </p>
     <div class="scrollbox">
       <table>
         <thead>
@@ -199,18 +198,14 @@
 </div>
 
 <footer class="text-center py-6 muted text-xs">
-  Submission for magicpin AI Challenge · Solo · Romanch Roshan Singh · this is the <span class="mono">/</span> route; judge calls <span class="mono">/v1/*</span>
+  Submission for magicpin AI Challenge · Solo · Romanch Roshan Singh ·
+  this is the <span class="mono">/</span> route; judge calls <span class="mono">/v1/*</span>
 </footer>
 </div>
 
 <script>
 function dashboard() {
   return {
-    authed: false,
-    password: localStorage.getItem('vera_admin_pw') || '',
-    loginError: '',
-    auth: '',
-
     tab: 'conversations',
     tabs: [
       { id: 'conversations', label: 'Live conversations' },
@@ -233,46 +228,36 @@ function dashboard() {
     groqKeyPoolSize: 0,
     version: '1.0.0',
 
-    init() {
-      // If we have a saved password, attempt auto-login
-      if (this.password) this.login();
+    async init() {
+      await this.refreshHealth();
+      await this.loadConversations();
+      // Refresh counts every 30s
+      setInterval(() => this.refreshHealth(), 30000);
     },
 
-    async login() {
-      this.auth = 'Basic ' + btoa('admin:' + this.password);
-      try {
-        const r = await fetch('/admin/health', { headers: { Authorization: this.auth } });
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const j = await r.json();
-        this.counts = j.contexts_loaded || this.counts;
-        this.uptimeSec = j.uptime_seconds || 0;
-        this.groqKeyPoolSize = (j.groq && j.groq.key_pool_size) || 0;
-        this.version = j.version || this.version;
-        this.authed = true;
-        this.loginError = '';
-        localStorage.setItem('vera_admin_pw', this.password);
-        this.loadConversations();
-        // Refresh counts every 30s
-        setInterval(() => this.refreshHealth(), 30000);
-      } catch (e) {
-        this.loginError = 'login failed: ' + e.message;
-      }
+    async onTabChange(id) {
+      this.tab = id;
+      if (id === 'conversations' && this.conversations.length === 0) await this.loadConversations();
+      if (id === 'contexts' && !this.contextSummary) await this.loadContexts();
+      if (id === 'suppressions' && !this.suppressions) await this.loadSuppressions();
+      if (id === 'architecture' && !this.archMermaidHtml) await this.loadArchitecture();
     },
 
     async refreshHealth() {
       try {
-        const r = await fetch('/admin/health', { headers: { Authorization: this.auth } });
+        const r = await fetch('/admin/health');
         if (!r.ok) return;
         const j = await r.json();
         this.counts = j.contexts_loaded || this.counts;
         this.uptimeSec = j.uptime_seconds || 0;
         this.groqKeyPoolSize = (j.groq && j.groq.key_pool_size) || 0;
+        this.version = j.version || this.version;
       } catch (e) {}
     },
 
     async loadConversations() {
       try {
-        const r = await fetch('/admin/conversations', { headers: { Authorization: this.auth } });
+        const r = await fetch('/admin/conversations');
         const j = await r.json();
         this.conversations = j.conversations || [];
       } catch (e) {}
@@ -281,38 +266,37 @@ function dashboard() {
     async openConversation(id) {
       this.tab = 'detail';
       try {
-        const r = await fetch('/admin/conversations/' + encodeURIComponent(id), { headers: { Authorization: this.auth } });
+        const r = await fetch('/admin/conversations/' + encodeURIComponent(id));
         this.detail = await r.json();
       } catch (e) { this.detail = null; }
     },
 
     async loadContexts() {
       try {
-        const r = await fetch('/admin/contexts', { headers: { Authorization: this.auth } });
+        const r = await fetch('/admin/contexts');
         this.contextSummary = await r.json();
       } catch (e) {}
     },
 
     async openContext(scope, cid) {
       try {
-        const r = await fetch('/admin/contexts/' + scope + '/' + encodeURIComponent(cid), { headers: { Authorization: this.auth } });
+        const r = await fetch('/admin/contexts/' + scope + '/' + encodeURIComponent(cid));
         this.contextDetail = await r.json();
       } catch (e) { this.contextDetail = null; }
     },
 
     async loadSuppressions() {
       try {
-        const r = await fetch('/admin/suppressions', { headers: { Authorization: this.auth } });
+        const r = await fetch('/admin/suppressions');
         this.suppressions = await r.json();
       } catch (e) {}
     },
 
     async loadArchitecture() {
       try {
-        const r = await fetch('/admin/architecture', { headers: { Authorization: this.auth } });
+        const r = await fetch('/admin/architecture');
         const j = await r.json();
         this.archModelRouting = j.model_routing || '';
-        // Render mermaid
         if (window.mermaid && j.mermaid) {
           mermaid.initialize({ startOnLoad: false, theme: 'default' });
           const { svg } = await mermaid.render('arch-graph', j.mermaid);
@@ -322,24 +306,6 @@ function dashboard() {
     },
   };
 }
-
-// Auto-load architecture when tab switches to it (alpine x-init quirk workaround)
-document.addEventListener('alpine:init', () => {
-  Alpine.effect(() => {
-    const root = document.querySelector('[x-data]');
-    if (!root || !root._x_dataStack) return;
-    const data = root._x_dataStack[0];
-    if (data.tab === 'architecture' && data.authed && !data.archMermaidHtml) {
-      data.loadArchitecture();
-    }
-    if (data.tab === 'contexts' && data.authed && !data.contextSummary) {
-      data.loadContexts();
-    }
-    if (data.tab === 'suppressions' && data.authed && !data.suppressions) {
-      data.loadSuppressions();
-    }
-  });
-});
 </script>
 </body>
 </html>
