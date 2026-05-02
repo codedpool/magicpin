@@ -59,6 +59,12 @@ class Settings(BaseSettings):
     REPLY_DEADLINE_SECONDS: int = 20
     TICK_CONCURRENCY: int = 8
     CADENCE_GUARD_HOURS: int = 4
+    # Max sends to one merchant within a rolling 24h window (Phase 5 — multi-
+    # turn cadence). Default 3 (challenge brief §12.3 extra credit).
+    MAX_SENDS_PER_MERCHANT_PER_24H: int = 3
+    # If we sent to the merchant N hours ago and they have NOT replied since,
+    # treat as long-silence and wait longer before pushing another send.
+    LONG_SILENCE_BACKOFF_HOURS: int = 12
     SUPPRESSION_TTL_DAYS: int = 7
     BLOCK_TTL_DAYS: int = 30
 
