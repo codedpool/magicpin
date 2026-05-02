@@ -201,8 +201,9 @@ async def push_context(body: ContextPushBody) -> Any:
 @app.post("/v1/tick", response_model=TickResponse)
 async def tick(body: TickBody) -> TickResponse:
     """
-    Phase A+B: stub — returns empty actions list.
-    Phase E+ will compose actions from available_triggers.
+    Phase I: real tick pipeline. Filter triggers via should_send, parallel
+    compose(), assemble actions, persist conversations + suppressions.
+    Hard 25s deadline; returns whatever finished.
     """
     logger.info(
         "tick.received",
@@ -211,7 +212,27 @@ async def tick(body: TickBody) -> TickResponse:
             "trigger_count": len(body.available_triggers),
         },
     )
-    return TickResponse(actions=[])
+    from pipeline.tick_loop import run_tick
+
+    actions = await run_tick(
+        now_iso=body.now,
+        available_triggers=body.available_triggers,
+        store=store,
+    )
+
+    # Validate each action conforms to TickAction (drop malformed defensively)
+    from core.models import TickAction
+
+    valid: list[TickAction] = []
+    for a in actions:
+        try:
+            valid.append(TickAction(**a))
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                "tick.action_validation_failed",
+                extra={"trigger_id": a.get("trigger_id"), "exc": str(e)[:200]},
+            )
+    return TickResponse(actions=valid)
 
 
 @app.post("/v1/reply")
