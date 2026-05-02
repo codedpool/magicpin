@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vera Console — magicpin AI Challenge</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  body { background: #0a0e14; color: #d6deeb; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto; }
+  .card { background: #11161e; border: 1px solid #1c2330; }
+  .accent { color: #82aaff; }
+  .accent-bg { background: #82aaff; color: #0a0e14; }
+  .muted { color: #8590a6; }
+  .green { color: #82e7a4; }
+  .yellow { color: #ffd479; }
+  .red { color: #ff5874; }
+  .chip { background:#1c2330; color:#d6deeb; padding:2px 8px; border-radius:8px; font-size:12px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, monospace; font-size: 12.5px; }
+  .tab-active { background: #82aaff; color: #0a0e14; }
+  .scrollbox { max-height: 60vh; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 8px; border-bottom: 1px solid #1c2330; color:#8590a6; font-weight: 500; font-size: 12px; }
+  td { padding: 8px; border-bottom: 1px solid #1c2330; vertical-align: top; }
+  tr:hover td { background: #161b24; }
+  pre { white-space: pre-wrap; word-break: break-word; }
+</style>
+</head>
+<body>
+<div x-data="dashboard()" x-init="init()" class="min-h-screen">
+
+<!-- Header -->
+<header class="px-6 py-5 border-b border-gray-800 flex items-center justify-between flex-wrap gap-3">
+  <div>
+    <h1 class="text-2xl font-bold accent">Vera Console</h1>
+    <p class="muted text-sm">magicpin AI Challenge submission · <span x-text="version"></span></p>
+  </div>
+  <div class="flex items-center gap-3 text-sm">
+    <span class="chip" x-text="'uptime: ' + (Math.floor(uptimeSec / 60)) + 'm'"></span>
+    <span class="chip" x-text="'cat: ' + counts.category"></span>
+    <span class="chip" x-text="'mer: ' + counts.merchant"></span>
+    <span class="chip" x-text="'cust: ' + counts.customer"></span>
+    <span class="chip" x-text="'trg: ' + counts.trigger"></span>
+    <span class="chip" :class="groqKeyPoolSize >= 2 ? 'green' : 'yellow'" x-text="'keys: ' + groqKeyPoolSize"></span>
+  </div>
+</header>
+
+<!-- Auth gate -->
+<div x-show="!authed" class="max-w-md mx-auto mt-32 card rounded-xl p-8">
+  <h2 class="text-xl mb-4">Admin login</h2>
+  <p class="muted text-sm mb-4">Enter the admin password to view the console. The judge's <span class="mono accent">/v1/*</span> endpoints don't need auth.</p>
+  <input type="password" x-model="password" @keydown.enter="login()"
+         placeholder="ADMIN_PASSWORD"
+         class="w-full px-3 py-2 rounded bg-gray-900 border border-gray-700 mb-3" />
+  <button @click="login()" class="w-full px-3 py-2 rounded accent-bg font-semibold">Sign in</button>
+  <p x-show="loginError" class="red text-sm mt-3" x-text="loginError"></p>
+</div>
+
+<!-- Main content (visible after auth) -->
+<div x-show="authed" class="px-6 py-6 max-w-7xl mx-auto">
+
+  <!-- Tabs -->
+  <nav class="flex gap-2 mb-6 flex-wrap">
+    <template x-for="t in tabs" :key="t.id">
+      <button @click="tab = t.id" :class="tab === t.id ? 'tab-active' : 'card'"
+              class="px-4 py-2 rounded text-sm font-medium" x-text="t.label"></button>
+    </template>
+  </nav>
+
+  <!-- Tab: Conversations -->
+  <div x-show="tab === 'conversations'" class="card rounded-xl p-4">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="text-lg accent">Live Conversations</h2>
+      <button @click="loadConversations()" class="chip">refresh</button>
+    </div>
+    <p x-show="conversations.length === 0" class="muted">No conversations yet. The judge will populate this when /v1/tick or /v1/reply fires.</p>
+    <div class="scrollbox">
+      <table>
+        <thead>
+          <tr>
+            <th>conv_id</th><th>merchant</th><th>turns</th><th>status</th><th>last bot body</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="c in conversations" :key="c.conversation_id">
+            <tr @click="openConversation(c.conversation_id)" class="cursor-pointer">
+              <td class="mono accent" x-text="c.conversation_id"></td>
+              <td class="mono" x-text="c.merchant_id"></td>
+              <td x-text="c.turn_count"></td>
+              <td>
+                <span x-show="c.ended" class="red">ended</span>
+                <span x-show="!c.ended" class="green">active</span>
+                <span x-show="c.auto_reply_count > 0" class="yellow ml-2" x-text="'auto-reply: ' + c.auto_reply_count"></span>
+              </td>
+              <td class="muted text-xs" x-text="c.last_bot_body_preview"></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tab: Conversation Detail / Composer Trace -->
+  <div x-show="tab === 'detail'" class="card rounded-xl p-4">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="text-lg accent">Conversation Trace</h2>
+      <button @click="tab = 'conversations'" class="chip">← back</button>
+    </div>
+    <p x-show="!detail" class="muted">Pick a conversation from the Conversations tab.</p>
+    <div x-show="detail" class="scrollbox">
+      <div class="mb-4 mono text-sm card rounded p-3">
+        <div><span class="muted">conv_id:</span> <span class="accent" x-text="detail?.conversation_id"></span></div>
+        <div><span class="muted">merchant:</span> <span x-text="detail?.merchant_id"></span></div>
+        <div><span class="muted">customer:</span> <span x-text="detail?.customer_id || '—'"></span></div>
+        <div><span class="muted">trigger:</span> <span x-text="detail?.trigger_id || '—'"></span></div>
+        <div><span class="muted">send_as:</span> <span x-text="detail?.send_as"></span></div>
+        <div><span class="muted">ended:</span> <span :class="detail?.ended ? 'red' : 'green'" x-text="detail?.ended ? ('yes — ' + (detail?.end_reason || '')) : 'no'"></span></div>
+      </div>
+      <h3 class="text-sm muted mb-2">Turns</h3>
+      <template x-for="(t, idx) in (detail?.turns || [])" :key="idx">
+        <div class="card rounded p-3 mb-2">
+          <div class="flex justify-between text-xs muted mb-1">
+            <span x-text="t.from + ' · ' + (t.ts || '')"></span>
+            <span x-show="t.sentiment" class="chip" x-text="'sentiment: ' + t.sentiment"></span>
+          </div>
+          <pre class="mono" x-text="t.body"></pre>
+          <div x-show="t.rationale" class="muted text-xs mt-2 italic" x-text="'rationale: ' + (t.rationale || '').slice(0, 240)"></div>
+          <div x-show="t.cta" class="text-xs mt-1"><span class="muted">cta:</span> <span class="chip" x-text="t.cta"></span></div>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- Tab: Contexts -->
+  <div x-show="tab === 'contexts'" class="card rounded-xl p-4">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="text-lg accent">Context Inspector</h2>
+      <button @click="loadContexts()" class="chip">refresh</button>
+    </div>
+    <p x-show="!contextSummary" class="muted">Loading…</p>
+    <div x-show="contextSummary" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <template x-for="scope in ['category', 'merchant', 'customer', 'trigger']" :key="scope">
+        <div class="card rounded p-3">
+          <h3 class="accent" x-text="scope + ' (' + (contextSummary[scope]?.count || 0) + ')'"></h3>
+          <div class="scrollbox max-h-60 mt-2 mono text-xs">
+            <template x-for="cid in (contextSummary[scope]?.ids || [])" :key="cid">
+              <div @click="openContext(scope, cid)" class="cursor-pointer hover:text-blue-300 py-0.5" x-text="cid"></div>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <div x-show="contextDetail" class="card rounded p-3 mt-4">
+      <div class="flex justify-between mb-2">
+        <h3 class="accent" x-text="contextDetail?.scope + ' / ' + contextDetail?.context_id"></h3>
+        <button @click="contextDetail = null" class="chip">close</button>
+      </div>
+      <pre class="mono text-xs scrollbox" x-text="JSON.stringify(contextDetail?.payload, null, 2)"></pre>
+    </div>
+  </div>
+
+  <!-- Tab: Suppressions -->
+  <div x-show="tab === 'suppressions'" class="card rounded-xl p-4">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="text-lg accent">Suppressions & Blocked Merchants</h2>
+      <button @click="loadSuppressions()" class="chip">refresh</button>
+    </div>
+    <h3 class="text-sm muted mb-2">Active suppression keys</h3>
+    <table class="mb-6">
+      <thead><tr><th>merchant</th><th>key</th><th>expires</th></tr></thead>
+      <tbody>
+        <template x-for="s in (suppressions?.suppressions || [])" :key="s.merchant_id + s.suppression_key">
+          <tr><td class="mono" x-text="s.merchant_id"></td><td class="mono accent" x-text="s.suppression_key"></td><td class="mono text-xs" x-text="s.expires_at"></td></tr>
+        </template>
+      </tbody>
+    </table>
+    <h3 class="text-sm muted mb-2">Blocked merchants (hostile / opt-out)</h3>
+    <table>
+      <thead><tr><th>merchant</th><th>expires</th></tr></thead>
+      <tbody>
+        <template x-for="b in (suppressions?.blocked_merchants || [])" :key="b.merchant_id">
+          <tr><td class="mono" x-text="b.merchant_id"></td><td class="mono text-xs" x-text="b.expires_at"></td></tr>
+        </template>
+      </tbody>
+    </table>
+    <p x-show="(suppressions?.suppressions?.length || 0) === 0 && (suppressions?.blocked_merchants?.length || 0) === 0" class="muted">No active suppressions or blocks.</p>
+  </div>
+
+  <!-- Tab: Architecture -->
+  <div x-show="tab === 'architecture'" class="card rounded-xl p-4">
+    <h2 class="text-lg accent mb-3">Architecture</h2>
+    <p class="muted text-sm mb-4">5-stage composer + 6-detector reply state machine + multi-key Groq routing + Supabase write-through. Same URL serves the judge's <span class="mono">/v1/*</span> endpoints and this dashboard.</p>
+    <div x-html="archMermaidHtml" class="bg-white p-4 rounded text-black overflow-auto"></div>
+    <div class="mt-4 mono text-xs muted" x-text="'model routing: ' + (archModelRouting || '')"></div>
+  </div>
+
+</div>
+
+<footer class="text-center py-6 muted text-xs">
+  Submission for magicpin AI Challenge · Solo · Romanch Roshan Singh · this is the <span class="mono">/</span> route; judge calls <span class="mono">/v1/*</span>
+</footer>
+</div>
+
+<script>
+function dashboard() {
+  return {
+    authed: false,
+    password: localStorage.getItem('vera_admin_pw') || '',
+    loginError: '',
+    auth: '',
+
+    tab: 'conversations',
+    tabs: [
+      { id: 'conversations', label: 'Live conversations' },
+      { id: 'detail',        label: 'Trace' },
+      { id: 'contexts',      label: 'Contexts' },
+      { id: 'suppressions',  label: 'Suppressions' },
+      { id: 'architecture',  label: 'Architecture' },
+    ],
+
+    conversations: [],
+    detail: null,
+    contextSummary: null,
+    contextDetail: null,
+    suppressions: null,
+    archMermaidHtml: '',
+    archModelRouting: '',
+
+    counts: { category: 0, merchant: 0, customer: 0, trigger: 0 },
+    uptimeSec: 0,
+    groqKeyPoolSize: 0,
+    version: '1.0.0',
+
+    init() {
+      // If we have a saved password, attempt auto-login
+      if (this.password) this.login();
+    },
+
+    async login() {
+      this.auth = 'Basic ' + btoa('admin:' + this.password);
+      try {
+        const r = await fetch('/admin/health', { headers: { Authorization: this.auth } });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const j = await r.json();
+        this.counts = j.contexts_loaded || this.counts;
+        this.uptimeSec = j.uptime_seconds || 0;
+        this.groqKeyPoolSize = (j.groq && j.groq.key_pool_size) || 0;
+        this.version = j.version || this.version;
+        this.authed = true;
+        this.loginError = '';
+        localStorage.setItem('vera_admin_pw', this.password);
+        this.loadConversations();
+        // Refresh counts every 30s
+        setInterval(() => this.refreshHealth(), 30000);
+      } catch (e) {
+        this.loginError = 'login failed: ' + e.message;
+      }
+    },
+
+    async refreshHealth() {
+      try {
+        const r = await fetch('/admin/health', { headers: { Authorization: this.auth } });
+        if (!r.ok) return;
+        const j = await r.json();
+        this.counts = j.contexts_loaded || this.counts;
+        this.uptimeSec = j.uptime_seconds || 0;
+        this.groqKeyPoolSize = (j.groq && j.groq.key_pool_size) || 0;
+      } catch (e) {}
+    },
+
+    async loadConversations() {
+      try {
+        const r = await fetch('/admin/conversations', { headers: { Authorization: this.auth } });
+        const j = await r.json();
+        this.conversations = j.conversations || [];
+      } catch (e) {}
+    },
+
+    async openConversation(id) {
+      this.tab = 'detail';
+      try {
+        const r = await fetch('/admin/conversations/' + encodeURIComponent(id), { headers: { Authorization: this.auth } });
+        this.detail = await r.json();
+      } catch (e) { this.detail = null; }
+    },
+
+    async loadContexts() {
+      try {
+        const r = await fetch('/admin/contexts', { headers: { Authorization: this.auth } });
+        this.contextSummary = await r.json();
+      } catch (e) {}
+    },
+
+    async openContext(scope, cid) {
+      try {
+        const r = await fetch('/admin/contexts/' + scope + '/' + encodeURIComponent(cid), { headers: { Authorization: this.auth } });
+        this.contextDetail = await r.json();
+      } catch (e) { this.contextDetail = null; }
+    },
+
+    async loadSuppressions() {
+      try {
+        const r = await fetch('/admin/suppressions', { headers: { Authorization: this.auth } });
+        this.suppressions = await r.json();
+      } catch (e) {}
+    },
+
+    async loadArchitecture() {
+      try {
+        const r = await fetch('/admin/architecture', { headers: { Authorization: this.auth } });
+        const j = await r.json();
+        this.archModelRouting = j.model_routing || '';
+        // Render mermaid
+        if (window.mermaid && j.mermaid) {
+          mermaid.initialize({ startOnLoad: false, theme: 'default' });
+          const { svg } = await mermaid.render('arch-graph', j.mermaid);
+          this.archMermaidHtml = svg;
+        }
+      } catch (e) {}
+    },
+  };
+}
+
+// Auto-load architecture when tab switches to it (alpine x-init quirk workaround)
+document.addEventListener('alpine:init', () => {
+  Alpine.effect(() => {
+    const root = document.querySelector('[x-data]');
+    if (!root || !root._x_dataStack) return;
+    const data = root._x_dataStack[0];
+    if (data.tab === 'architecture' && data.authed && !data.archMermaidHtml) {
+      data.loadArchitecture();
+    }
+    if (data.tab === 'contexts' && data.authed && !data.contextSummary) {
+      data.loadContexts();
+    }
+    if (data.tab === 'suppressions' && data.authed && !data.suppressions) {
+      data.loadSuppressions();
+    }
+  });
+});
+</script>
+</body>
+</html>
