@@ -11,7 +11,44 @@ The big-model call that writes the actual message. Builds the prompt from:
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
+
+
+# Match the first balanced {...} block at top level (greedy, handles nested).
+_JSON_OBJECT_RE = re.compile(r"\{(?:[^{}]|(?:\{[^{}]*\}))*\}", re.DOTALL)
+
+
+def _parse_draft_response(raw: str) -> tuple[str, str]:
+    """Tolerant parse of DRAFT output. Handles three shapes:
+
+    1. Pure JSON object → json.loads.
+    2. Prose-then-JSON (or markdown-fenced JSON) → extract first {...} block.
+    3. Pure prose (no JSON) → use whole text as body.
+
+    Case 2 covers Groq json_validate_failed recoveries, where the model emits
+    a preamble before the JSON and strict json_object validation rejects it.
+    """
+    raw = (raw or "").strip()
+    if not raw:
+        return "", "(empty response)"
+    try:
+        parsed = json.loads(raw)
+        if isinstance(parsed, dict):
+            return (parsed.get("body") or "").strip(), (parsed.get("rationale") or "").strip()
+    except (json.JSONDecodeError, AttributeError):
+        pass
+    m = _JSON_OBJECT_RE.search(raw)
+    if m:
+        try:
+            parsed = json.loads(m.group(0))
+            if isinstance(parsed, dict) and parsed.get("body"):
+                logger.info("draft.recovered_json_from_prose", extra={"prefix": raw[:80]})
+                return (parsed.get("body") or "").strip(), (parsed.get("rationale") or "(extracted from prose+json)").strip()
+        except (json.JSONDecodeError, AttributeError):
+            pass
+    logger.warning("draft.malformed_json_fallback_to_raw", extra={"raw": raw[:300]})
+    return raw, "(rationale missing — JSON parse failed)"
 
 from core.logging import logger
 from llm.groq_client import get_groq
@@ -182,14 +219,7 @@ async def draft(
         temperature=0.0,
     )
 
-    try:
-        parsed = json.loads(raw)
-        body = (parsed.get("body") or "").strip()
-        rationale = (parsed.get("rationale") or "").strip()
-    except (json.JSONDecodeError, AttributeError) as e:
-        logger.warning("draft.malformed_json", extra={"raw": raw[:300], "exc": str(e)})
-        body = raw.strip()
-        rationale = "(rationale missing — JSON parse failed)"
+    body, rationale = _parse_draft_response(raw)
 
     return {
         "body": body,

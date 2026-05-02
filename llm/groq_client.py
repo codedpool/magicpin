@@ -236,6 +236,23 @@ class GroqClient:
             raise _RetryableGroqError(f"rate_limited: {r.text[:200]}")
         if 500 <= r.status_code < 600:
             raise _RetryableGroqError(f"server_error_{r.status_code}: {r.text[:200]}")
+        if r.status_code == 400 and json_mode:
+            # Groq strict json_object mode rejects valid model output that has
+            # any prose around the JSON. The 400 body carries the actual
+            # generation in `error.failed_generation` — extract and return it.
+            # draft.py / self_score.py already tolerate non-JSON via fallback
+            # parsing, so this rescues otherwise-lost composes.
+            try:
+                err = r.json().get("error", {})
+                if err.get("code") == "json_validate_failed" and err.get("failed_generation"):
+                    logger.warning(
+                        "groq.json_validate_recovered",
+                        extra={"model": model, "len": len(err["failed_generation"])},
+                    )
+                    return err["failed_generation"]
+            except (json.JSONDecodeError, AttributeError, KeyError):
+                pass
+            raise GroqError(f"http_400: {r.text[:300]}")
         if r.status_code != 200:
             raise GroqError(f"http_{r.status_code}: {r.text[:300]}")
 
