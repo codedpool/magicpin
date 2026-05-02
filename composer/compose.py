@@ -33,8 +33,10 @@ from composer.stages.self_score import min_dim, self_score as self_score_stage, 
 from validators import validate_pipeline
 
 
-COMPOSER_VERSION = "0.3.0-phase-FG"
-MIN_DIM_REFINE_THRESHOLD = 7
+COMPOSER_VERSION = "0.4.0-leak-fix"
+# Lifted 7 → 8 — fire REFINE more aggressively for the polish pass.
+# REFINE ships best-of-2 (re-validated + re-scored), so we never get worse.
+MIN_DIM_REFINE_THRESHOLD = 8
 MAX_DRAFT_RETRIES = 2  # 1 original + 1 retry on validator fail
 
 
