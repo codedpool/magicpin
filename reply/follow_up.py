@@ -153,7 +153,8 @@ async def compose_follow_up(
     # Run validators on the follow-up too
     validation = validate_pipeline(
         body,
-        plan={"language": _infer_language(merchant, customer), "cta_shape": "open_ended",
+        plan={"language": _infer_language(merchant, customer, conversation),
+              "cta_shape": "open_ended",
               "send_as": "vera"},
         category=category,
         merchant=merchant,
@@ -177,11 +178,54 @@ async def compose_follow_up(
     }
 
 
-def _infer_language(merchant: dict[str, Any] | None, customer: dict[str, Any] | None) -> str:
+def _infer_language(
+    merchant: dict[str, Any] | None,
+    customer: dict[str, Any] | None,
+    conversation: dict[str, Any] | None = None,
+) -> str:
+    """
+    Pick the target language for the follow-up.
+    Priority:
+      1. If the merchant SWITCHED language in their last 1-2 turns, follow them.
+      2. Customer language_pref if customer-facing.
+      3. Merchant.identity.languages defaults.
+    """
+    # 1. Did the merchant switch script in recent turns?
+    if conversation:
+        recent_merchant_turns = [
+            (t.get("body") or "")
+            for t in (conversation.get("turns") or [])[-4:]
+            if (t.get("from") or "").lower() == "merchant"
+        ]
+        for body in recent_merchant_turns[-2:]:  # last 2 merchant turns
+            if not body:
+                continue
+            # Devanagari script range (Hindi/Marathi)
+            if any(0x0900 <= ord(ch) <= 0x097F for ch in body):
+                return "hi-en mix"
+            # Telugu
+            if any(0x0C00 <= ord(ch) <= 0x0C7F for ch in body):
+                return "te-en mix"
+            # Kannada
+            if any(0x0C80 <= ord(ch) <= 0x0CFF for ch in body):
+                return "kn-en mix"
+            # Tamil
+            if any(0x0B80 <= ord(ch) <= 0x0BFF for ch in body):
+                return "ta-en mix"
+            # Transliterated Hindi tokens (rough heuristic — common code-mix words)
+            lower = body.lower()
+            hi_signals = ("hai ", "hain ", "kya ", "aap ", "apke ", "main ", "namaste",
+                          "shukriya", "theek", "accha ", "haan", "ji ", "chahiye")
+            if any(sig in lower for sig in hi_signals):
+                return "hi-en mix"
+
+    # 2. Customer pref
     if customer:
         pref = (customer.get("identity") or {}).get("language_pref")
         if pref:
             return pref
+
+    # 3. Merchant identity defaults
     langs = ((merchant or {}).get("identity") or {}).get("languages") or ["en"]
     if "hi" in langs:
         return "hi-en mix"
@@ -189,6 +233,10 @@ def _infer_language(merchant: dict[str, Any] | None, customer: dict[str, Any] | 
         return "te-en mix"
     if "kn" in langs:
         return "kn-en mix"
+    if "mr" in langs:
+        return "hi-en mix"  # Marathi shares Devanagari with Hindi
+    if "ta" in langs:
+        return "ta-en mix"
     return "en"
 
 

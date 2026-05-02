@@ -204,11 +204,20 @@ async def _compose_to_action(trigger: dict[str, Any], store: Any) -> dict[str, A
     if customer_id:
         customer = await store.get_context("customer", customer_id)
 
-    msg = await compose(category, merchant, trigger, customer)
+    # Build conv_id FIRST so we can look up bot's own prior sends in this
+    # conversation (cross-tick repetition guard, anti-pattern §10 of brief).
+    conv_id = _build_conv_id(merchant_id, trigger, customer_id)
+    prior_conv = await store.get_conversation(conv_id) or {}
+    prior_turns = prior_conv.get("turns") or []
+    merchant_history = (merchant or {}).get("conversation_history") or []
+    combined_history = list(merchant_history) + list(prior_turns)
+
+    msg = await compose(
+        category, merchant, trigger, customer,
+        conversation_history=combined_history,
+    )
     if msg is None:
         return None
-
-    conv_id = _build_conv_id(merchant_id, trigger, customer_id)
 
     return {
         "conversation_id": conv_id,

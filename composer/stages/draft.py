@@ -24,6 +24,9 @@ from composer.prompts.system_base import SYSTEM_BASE
 DRAFT_USER_TEMPLATE = """\
 {kind_framing}
 
+=== LEVER HINT FOR THIS KIND (production Vera's biggest misses get 1.5× weight) ===
+{lever_hint}
+
 === PLAN (from PLAN stage — use these as your anchors) ===
 selected_facts: {selected_facts}
 compulsion_levers: {compulsion_levers}
@@ -82,6 +85,9 @@ async def draft(
     kind_module = kind_router.route(kind)
     # Use replace (not format) so curly-braced examples in framing text don't break.
     kind_framing = kind_module.KIND_FRAMING.replace("{kind}", kind)
+    # Inject the kind-specific lever hint so DRAFT actually uses the priorities
+    # the kind module declares (without this, only PLAN sees them).
+    lever_hint = getattr(kind_module, "LEVER_HINT", "")
 
     # Split offers into active/expired so the prompt explicitly knows what's usable
     offers = (merchant or {}).get("offers") or []
@@ -126,6 +132,7 @@ async def draft(
 
     user_msg = DRAFT_USER_TEMPLATE.format(
         kind_framing=kind_framing,
+        lever_hint=lever_hint or "(no kind-specific hint — defer to PLAN)",
         selected_facts=plan_dict.get("selected_facts", []),
         compulsion_levers=plan_dict.get("compulsion_levers", []),
         voice_notes=plan_dict.get("voice_notes", ""),

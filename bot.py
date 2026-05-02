@@ -250,26 +250,35 @@ async def reply(body: ReplyBody) -> Any:
         },
     )
 
-    # Lookup contexts for this merchant/customer (None if not pushed yet)
+    # Look up the original trigger via conversation.trigger_id so the reply
+    # handler (and follow-up composer) has the full original context.
+    conversation_payload = await store.get_conversation(body.conversation_id)
+    trigger_payload = None
+    resolved_merchant_id = body.merchant_id or (conversation_payload or {}).get("merchant_id")
+    resolved_customer_id = body.customer_id or (conversation_payload or {}).get("customer_id")
+    if conversation_payload and conversation_payload.get("trigger_id"):
+        trigger_payload = await store.get_context("trigger", conversation_payload["trigger_id"])
+
+    # Look up merchant/category/customer contexts (None if not pushed yet)
     merchant_payload = None
     customer_payload = None
     category_payload = None
-    if body.merchant_id:
-        merchant_payload = await store.get_context("merchant", body.merchant_id)
+    if resolved_merchant_id:
+        merchant_payload = await store.get_context("merchant", resolved_merchant_id)
         if merchant_payload:
             cat_slug = merchant_payload.get("category_slug")
             if cat_slug:
                 category_payload = await store.get_context("category", cat_slug)
-    if body.customer_id:
-        customer_payload = await store.get_context("customer", body.customer_id)
+    if resolved_customer_id:
+        customer_payload = await store.get_context("customer", resolved_customer_id)
 
     from reply.handler import handle_reply
 
     return await handle_reply(
         conversation_id=body.conversation_id,
         message=body.message,
-        merchant_id=body.merchant_id,
-        customer_id=body.customer_id,
+        merchant_id=resolved_merchant_id,
+        customer_id=resolved_customer_id,
         from_role=body.from_role,
         received_at=body.received_at,
         turn_number=body.turn_number,
@@ -277,7 +286,7 @@ async def reply(body: ReplyBody) -> Any:
         category=category_payload,
         merchant=merchant_payload,
         customer=customer_payload,
-        trigger=None,  # Phase I will look up the trigger by conversation.trigger_id
+        trigger=trigger_payload,
     )
 
 

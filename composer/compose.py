@@ -43,12 +43,18 @@ async def compose(
     merchant: dict[str, Any],
     trigger: dict[str, Any],
     customer: dict[str, Any] | None = None,
+    *,
+    conversation_history: list[dict[str, Any]] | None = None,
 ) -> ComposedMessage | None:
     """
     Compose a single message from the 4 contexts.
 
     Returns ComposedMessage on success, or None if the pipeline decides not
     to send (PLAN refuses, or validator fails twice).
+
+    `conversation_history` lets callers pass the bot's own prior sends from
+    the store (cross-tick) merged with the merchant-pushed conversation_history.
+    Falls back to merchant.conversation_history if not provided.
     """
     kind = trigger.get("kind", "default")
     is_hand_tuned = kind_router.is_hand_tuned(kind)
@@ -63,7 +69,8 @@ async def compose(
     if top_item_id and category:
         digest_item = find_digest_item(category, top_item_id)
 
-    conversation_history = (merchant or {}).get("conversation_history") or []
+    if conversation_history is None:
+        conversation_history = (merchant or {}).get("conversation_history") or []
 
     # ─── Stage 1: PLAN ──────────────────────────────────────────────────────
     try:
