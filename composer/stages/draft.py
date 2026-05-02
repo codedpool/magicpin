@@ -18,7 +18,7 @@ from llm.groq_client import get_groq
 from llm.routes import Purpose
 
 from composer.prompts import kind_router
-from composer.prompts.system_base import SYSTEM_BASE
+from composer.prompts.system_base import get_variant
 
 
 DRAFT_USER_TEMPLATE = """\
