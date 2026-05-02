@@ -59,6 +59,8 @@ class GroqClient:
             self._keys.append(settings.GROQ_API_KEY_BACKUP)
         if settings.GROQ_API_KEY_TERTIARY:
             self._keys.append(settings.GROQ_API_KEY_TERTIARY)
+        if settings.GROQ_API_KEY_QUATERNARY:
+            self._keys.append(settings.GROQ_API_KEY_QUATERNARY)
 
         self._client = httpx.AsyncClient(
             base_url=settings.GROQ_BASE_URL,

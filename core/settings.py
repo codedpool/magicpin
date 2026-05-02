@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = Field(..., description="Groq API key (gsk_*)")
     GROQ_API_KEY_BACKUP: str = Field("", description="Optional 2nd Groq key (round-robin)")
     GROQ_API_KEY_TERTIARY: str = Field("", description="Optional 3rd Groq key (round-robin)")
+    GROQ_API_KEY_QUATERNARY: str = Field("", description="Optional 4th Groq key (round-robin)")
     GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
 
     # ─── Supabase ────────────────────────────────────────────────────────────
