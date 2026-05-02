@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from core.logging import logger
@@ -81,7 +82,60 @@ app = FastAPI(
 )
 
 
-# ─── middleware: per-request log + safe default on uncaught exceptions ───────
+# ─── exception handler: return our schema on Pydantic validation errors ─────
+# Testing brief §2.1 expects 400 with {accepted: false, reason, details} on
+# malformed /v1/context. Default FastAPI returns 422 with {detail:[...]}.
+# Map validation errors to our schema for /v1/context; 422 elsewhere is fine.
+
+@app.exception_handler(RequestValidationError)
+async def _validation_error_handler(request: Request, exc: RequestValidationError):
+    path = request.url.path
+    errs = exc.errors()
+    summary = "; ".join(
+        f"{'.'.join(str(p) for p in e.get('loc', ()))}: {e.get('msg', '')}"
+        for e in errs[:3]
+    )
+    if path == "/v1/context":
+        return JSONResponse(
+            status_code=400,
+            content={
+                "accepted": False,
+                "reason": "validation_error",
+                "details": summary[:500],
+            },
+        )
+    # Default: keep FastAPI's 422 shape but include our reason field
+    return JSONResponse(
+        status_code=422,
+        content={"detail": errs, "reason": "validation_error", "summary": summary[:500]},
+    )
+
+
+# ─── middleware: enforce 500KB payload cap (testing brief §5) + per-request
+#                  log + safe default on uncaught exceptions ────────────────
+
+MAX_PAYLOAD_BYTES = 500 * 1024  # 500 KB per testing brief §5
+
+
+@app.middleware("http")
+async def payload_size_guard(request: Request, call_next):
+    if request.method in ("POST", "PUT", "PATCH"):
+        content_length = request.headers.get("content-length")
+        if content_length:
+            try:
+                if int(content_length) > MAX_PAYLOAD_BYTES:
+                    return JSONResponse(
+                        status_code=413,
+                        content={
+                            "accepted": False,
+                            "reason": "payload_too_large",
+                            "details": f"max {MAX_PAYLOAD_BYTES} bytes",
+                        },
+                    )
+            except ValueError:
+                pass
+    return await call_next(request)
+
 
 @app.middleware("http")
 async def log_and_guard(request: Request, call_next):
@@ -280,7 +334,7 @@ async def reply(body: ReplyBody) -> Any:
         merchant_id=resolved_merchant_id,
         customer_id=resolved_customer_id,
         from_role=body.from_role,
-        received_at=body.received_at,
+        received_at=body.received_at or _utc_iso_now(),
         turn_number=body.turn_number,
         store=store,
         category=category_payload,

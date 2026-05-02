@@ -156,7 +156,7 @@ class ReplyBody(BaseModel):
     customer_id: str | None = None
     from_role: Literal["merchant", "customer"] = "merchant"
     message: str
-    received_at: str
+    received_at: str | None = None  # judge may omit per brief §2.3 short example
     turn_number: int = 1
 
 
