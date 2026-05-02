@@ -242,7 +242,7 @@ Public read-only dashboard (no auth — synthetic data, GET-only endpoints). Tab
 
 - **Sequential dataset run** for `submission.jsonl` (10s pause between pairs) — avoids Groq TPM bursts at the cost of ~3 min total runtime.
 - **Render free + Supabase write-through** vs paid VM. Trade: cold-start risk during 3-day window, mitigated by UptimeRobot 5-min ping + state rehydration on boot (<1s).
-- **No fully-implemented multi-arm A/B for prompt versions**. We log `composer_version` in every rationale; A/B framework would be future work.
+- **A/B-testable composer prompt** (engagement-design.md requirement): variant registry in `composer/prompts/system_base.py:SYSTEM_BASE_VARIANTS`; per-request variant chosen by `composer/compose.py:choose_variant()`; logged on every send (rationale `variant=<id>`); observable at `/admin/variants` (live distribution). Currently 100% → `standard` (single variant); adding a second variant + traffic split is a registry edit, no composer code change.
 - **Best-time-to-text "learned" mode requires ≥2 reply timestamps** before it activates. Cold-start uses category defaults.
 
 ---
