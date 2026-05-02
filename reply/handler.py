@@ -21,7 +21,7 @@ from typing import Any
 from core.logging import logger
 from core.settings import settings
 
-from reply import auto_reply, hostile, intent, out_of_scope, wait_request, follow_up
+from reply import auto_reply, hostile, intent, out_of_scope, sentiment, wait_request, follow_up
 
 
 def _utc_iso() -> str:
@@ -49,18 +49,27 @@ async def handle_reply(
     `store` is the WriteThroughStore (or InMemoryStore) — used for conversation
     persistence + suppression updates.
     """
-    # ─── 0. Append the inbound merchant turn to the conversation ───────────
+    # ─── 0. Classify sentiment of inbound message + append turn ────────────
+    # Run sentiment classifier first so the turn is persisted with its label.
+    pre_conversation = await store.get_conversation(conversation_id) or {"turns": []}
+    sentiment_label = await sentiment.classify_sentiment(message, pre_conversation)
+
     inbound_turn = {
         "from": from_role,
         "body": message,
         "ts": received_at or _utc_iso(),
         "turn_number": turn_number,
+        "sentiment": sentiment_label,
     }
     await store.append_conversation_turn(
         conversation_id,
         inbound_turn,
         merchant_id=merchant_id,
         customer_id=customer_id,
+    )
+    logger.info(
+        "reply.sentiment",
+        extra={"conv_id": conversation_id, "sentiment": sentiment_label},
     )
 
     # Pull conversation state AFTER appending the inbound turn
@@ -108,6 +117,44 @@ async def handle_reply(
             extra={"conv_id": conversation_id, "wait_seconds": wait_secs},
         )
         return action
+
+    # ─── 3.5. Sentiment fade-out — soft back-off before pushing further ────
+    # If the merchant's last 2 sentiments are drifting/negative, the polite
+    # move is to step back. They haven't said "stop" but they're signaling
+    # fade-out. Honoring this earns "knowing when to stop" credit (brief §12.5).
+    back_off, reason = sentiment.should_back_off(conversation.get("turns") or [])
+    if back_off:
+        logger.info(
+            "reply.sentiment_back_off",
+            extra={"conv_id": conversation_id, "reason": reason},
+        )
+        # Two-stage fade-out: first time → wait 12h. If they reply again drifting
+        # without engaging, end gracefully on the next pass.
+        recent_sentiments = [
+            t.get("sentiment")
+            for t in (conversation.get("turns") or [])
+            if (t.get("from") or "").lower() == "merchant" and t.get("sentiment")
+        ]
+        if len(recent_sentiments) >= 3 and all(
+            s in {"drifting", "negative"} for s in recent_sentiments[-3:]
+        ):
+            await store.mark_conversation_ended(conversation_id, f"sentiment_fade:{reason}")
+            return {
+                "action": "end",
+                "rationale": (
+                    f"Merchant tone has been drifting/negative for 3 consecutive turns. "
+                    f"Closing gracefully — they haven't said stop, but pushing further "
+                    f"would harm the relationship."
+                ),
+            }
+        return {
+            "action": "wait",
+            "wait_seconds": 43200,  # 12h — give them space
+            "rationale": (
+                f"Merchant tone signals fade-out ({reason}); backing off 12h to "
+                f"avoid pushing. Will re-engage if they ping us first."
+            ),
+        }
 
     # ─── 4. Intent transition (commitment) ────────────────────────────────
     is_commitment = intent.detect(message)
