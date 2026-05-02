@@ -28,6 +28,17 @@ TRIGGER KIND: curious_ask_due (weekly cadence — ask the merchant a question)
 - ONE question. ONE CTA.
 - Don't make assumptions about what they'll say.
 - Don't chain multiple asks ("what's popular AND who's your top customer AND...")
+
+# OVERRIDE — IMPORTANT
+This kind is the EXCEPTION to the system_base "2-anchors" rule. The whole
+point is to ask a question — fabricating peer/percentage/count numbers to
+satisfy the rule WILL fail validation. Anchor with:
+  - Owner first name (already required)
+  - Merchant name + locality (e.g. "Studio11 in Kapra")
+  - The week-window framing ("this week", "last 7 days")
+That is sufficient — no numeric peer stat needed. NEVER invent percentages
+like "121%" or "+45%". If you cannot quote a number from the merchant's
+own performance object verbatim, OMIT the number entirely.
 """
 
 LEVER_HINT = "asking_the_merchant (1.5×) + reciprocity + low_effort. THIS IS THE LEVER PRODUCTION VERA MOST UNDER-USES — make the ask CRISP and SPECIFIC, not generic. 'What's been most-asked this week?' beats 'How are things?'."
