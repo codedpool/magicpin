@@ -35,22 +35,38 @@ class GroqError(Exception):
 
 
 class GroqClient:
+    """
+    Async Groq client with multi-key round-robin.
+
+    If GROQ_API_KEY_BACKUP is set, requests alternate between the two keys
+    (round-robin), effectively doubling free-tier TPM. On 429 with a given
+    key, the client retries on the OTHER key on the same model before
+    falling back to a different model.
+    """
+
     def __init__(self) -> None:
         self._client: httpx.AsyncClient | None = None
+        self._keys: list[str] = []
+        self._key_idx: int = 0
+        self._key_lock = asyncio.Lock()
 
     async def connect(self) -> None:
         if self._client is not None:
             return
+        # Build the key pool — primary + any number of backups
+        self._keys = [settings.GROQ_API_KEY]
+        if settings.GROQ_API_KEY_BACKUP:
+            self._keys.append(settings.GROQ_API_KEY_BACKUP)
+        if settings.GROQ_API_KEY_TERTIARY:
+            self._keys.append(settings.GROQ_API_KEY_TERTIARY)
+
         self._client = httpx.AsyncClient(
             base_url=settings.GROQ_BASE_URL,
-            headers={
-                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-                "Content-Type": "application/json",
-            },
+            headers={"Content-Type": "application/json"},  # Auth is per-request
             timeout=httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=5.0),
             limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
         )
-        logger.info("groq.client_opened")
+        logger.info("groq.client_opened", extra={"key_pool_size": len(self._keys)})
 
     async def close(self) -> None:
         if self._client is not None:
@@ -63,6 +79,19 @@ class GroqClient:
         if self._client is None:
             raise RuntimeError("GroqClient not connected. Call connect() first.")
         return self._client
+
+    async def _next_key(self) -> tuple[str, int]:
+        """Round-robin: return (api_key, index)."""
+        async with self._key_lock:
+            idx = self._key_idx
+            self._key_idx = (self._key_idx + 1) % max(1, len(self._keys))
+            return self._keys[idx], idx
+
+    async def _other_keys(self, current_idx: int) -> list[tuple[str, int]]:
+        """Return all OTHER keys in order (for 429 retry on same model)."""
+        if len(self._keys) <= 1:
+            return []
+        return [(k, i) for i, k in enumerate(self._keys) if i != current_idx]
 
     # ─── pre-warm ────────────────────────────────────────────────────────────
 
@@ -106,23 +135,51 @@ class GroqClient:
         temp = temperature if temperature is not None else DEFAULT_TEMPERATURE[purpose]
         toks = max_tokens if max_tokens is not None else DEFAULT_MAX_TOKENS[purpose]
 
+        # Pick starting key (round-robin)
+        api_key, key_idx = await self._next_key()
+        other_keys = await self._other_keys(key_idx)
+
+        # Attempt sequence:
+        #   1. primary model × primary key
+        #   2. primary model × each other key
+        #   3. fallback model × primary key
+        #   4. fallback model × each other key
+        #   5. 15s backoff → primary model × primary key
+        attempts: list[tuple[str, str, int]] = []
+        attempts.append((primary, api_key, key_idx))
+        for ok, oi in other_keys:
+            attempts.append((primary, ok, oi))
+        attempts.append((fallback, api_key, key_idx))
+        for ok, oi in other_keys:
+            attempts.append((fallback, ok, oi))
+
+        last_err: _RetryableGroqError | None = None
+        for i, (model, key, ki) in enumerate(attempts):
+            try:
+                if i > 0:
+                    logger.warning(
+                        "groq.retry",
+                        extra={"purpose": purpose.value, "attempt": i + 1,
+                               "model": model, "key_idx": ki},
+                    )
+                return await self._raw_call(
+                    model, prompt, system, json_mode, temp, toks, timeout_seconds,
+                    api_key=key,
+                )
+            except _RetryableGroqError as e:
+                last_err = e
+                continue
+
+        # All attempts rate-limited. Back off and retry once on primary.
+        logger.warning("groq.full_backoff", extra={"purpose": purpose.value})
+        await asyncio.sleep(15)
         try:
             return await self._raw_call(
-                primary, prompt, system, json_mode, temp, toks, timeout_seconds
+                primary, prompt, system, json_mode, temp, toks, timeout_seconds,
+                api_key=api_key,
             )
-        except _RetryableGroqError as e:
-            logger.warning(
-                "groq.fallback",
-                extra={
-                    "purpose": purpose.value,
-                    "primary": primary,
-                    "fallback": fallback,
-                    "reason": str(e)[:200],
-                },
-            )
-            return await self._raw_call(
-                fallback, prompt, system, json_mode, temp, toks, timeout_seconds
-            )
+        except _RetryableGroqError as e_final:
+            raise GroqError(f"rate_limited_after_full_backoff: {e_final or last_err}") from e_final
 
     # ─── internals ───────────────────────────────────────────────────────────
 
@@ -135,6 +192,8 @@ class GroqClient:
         temperature: float = 0.0,
         max_tokens: int = 600,
         timeout_seconds: float | None = None,
+        *,
+        api_key: str | None = None,
     ) -> str:
         if self._client is None:
             await self.connect()
@@ -153,6 +212,10 @@ class GroqClient:
         if json_mode:
             body["response_format"] = {"type": "json_object"}
 
+        # Per-request Authorization header (round-robin between keys)
+        key_to_use = api_key or settings.GROQ_API_KEY
+        headers = {"Authorization": f"Bearer {key_to_use}"}
+
         t0 = time.time()
         try:
             req_timeout = (
@@ -161,6 +224,7 @@ class GroqClient:
             r = await self.client.post(
                 "/chat/completions",
                 json=body,
+                headers=headers,
                 timeout=req_timeout if req_timeout else self.client.timeout,
             )
         except (httpx.TimeoutException, httpx.NetworkError) as e:

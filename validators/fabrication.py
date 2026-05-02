@@ -22,12 +22,15 @@ _CLAIM_PATTERNS = {
     "number": re.compile(r"\b(\d{2,}(?:[,.]\d+)?)\b"),
 }
 
-# Common known-source acronyms — if mentioned, verify they appear in context.
-# Otherwise this validator can't tell a fabricated journal from a real one.
+# Specific journals/councils whose mention should trace to context (otherwise
+# we can't tell a fabricated citation from a real one). Generic platform names
+# (Google, WhatsApp, Insta, Swiggy) are universal in this domain — don't flag.
 KNOWN_JOURNAL_HINTS = (
-    "JIDA", "IJDR", "IDA", "DCI", "ADA", "JADA", "Practo", "GBP", "Google",
-    "Dental Tribune", "Swiggy", "Insta", "Instagram", "WhatsApp", "Kaleyra",
-    "Dentsply", "IPS",
+    "JIDA", "IJDR", "JADA",
+    "DCI", "Dental Council of India",
+    "Practo",
+    "Dental Tribune", "Dental Tribune India",
+    "Dentsply", "IPS e.max",
 )
 
 

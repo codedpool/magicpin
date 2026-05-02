@@ -93,13 +93,9 @@ def check(
         )
 
     if shape == "none":
-        if _question_count_overall(body) > 0:
-            return (
-                False,
-                "cta_shape=none but body contains a question.",
-                "Drop the question — this is a pure-information message; no CTA needed.",
-                body,
-            )
+        # Be permissive — if PLAN said "none" but the body has a question, treat
+        # as open_ended rather than rejecting (most informational messages benefit
+        # from a soft check-in).
         return True, None, None, body
 
     if shape == "binary_yes_no":

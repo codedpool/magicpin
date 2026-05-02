@@ -1,0 +1,46 @@
+# Render service configuration — magicpin AI Challenge
+# https://render.com/docs/yaml-spec
+#
+# Usage:
+#   1. Push this repo to GitHub
+#   2. Create a Render account and a new Web Service from this repo
+#   3. Set rootDir to "submission/" if the GitHub repo contains the parent folder
+#   4. Add env vars in Render Dashboard (NOT in this YAML — keep secrets out of git):
+#        GROQ_API_KEY
+#        GROQ_API_KEY_BACKUP (optional)
+#        SUPABASE_URL
+#        SUPABASE_DB_HOST
+#        SUPABASE_DB_PORT
+#        SUPABASE_DB_USER
+#        SUPABASE_DB_PASSWORD
+#        SUPABASE_DB_NAME
+#        SUPABASE_SERVICE_KEY
+#        ADMIN_PASSWORD
+#        BOT_TEAM_NAME
+#        BOT_VERSION
+#        BOT_CONTACT_EMAIL
+#        SUPABASE_ENABLED=true
+#   5. Set up UptimeRobot to ping /v1/healthz every 5 minutes (prevents free-tier sleep)
+#
+# Free tier notes:
+#   - Free web services sleep after 15 min idle. UptimeRobot ping keeps it warm.
+#   - No persistent disk on free — but we use Supabase write-through so state survives restarts.
+#   - 750 service-hours/month per free account → one always-on service fits.
+
+services:
+  - type: web
+    name: vera-bot
+    runtime: python
+    region: singapore         # closest to Indian users; lower latency
+    plan: free                # free tier
+    branch: main
+    rootDir: submission
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn bot:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /v1/healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.10
+      # All secrets are set via the Render Dashboard, NOT here.
+      # See deploy/render_setup.md for the full list.

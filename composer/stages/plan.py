@@ -45,13 +45,16 @@ LEVER PRIORITY (for picking compulsion_levers):
 - if customer context is provided, send_as=merchant_on_behalf
 
 CTA SHAPE GUIDANCE (pick the shape that matches the trigger family):
-- recall_due / appointment_reminder / chronic_refill_due  → "multi_choice_slot"
-  (because trigger.payload usually has 2 specific slots — Reply 1 for X, 2 for Y)
+- recall_due / appointment_reminder / chronic_refill_due / appointment_tomorrow / trial_followup
+                                                          → "multi_choice_slot"
+  (when trigger.payload contains specific slots — "Reply 1 for X, 2 for Y")
 - competitor_opened / festival_upcoming / curious_ask     → "open_ended"
 - supply_alert / regulation_change / renewal_due          → "binary_yes_no"
 - research_digest / cde_opportunity                        → "open_ended"
-- perf_dip / perf_spike / review_theme_emerged             → "open_ended"
-- milestone_reached                                         → "none" (informational only)
+- perf_dip / perf_spike / review_theme_emerged / milestone_reached
+                                                          → "open_ended"
+- DEFAULT for unknown kinds                                → "open_ended"
+- ONLY use "none" when the trigger is purely informational with no possible follow-up
 
 LANGUAGE: choose based on merchant.identity.languages (or customer.identity.language_pref
 if customer is given). Default "en" if missing. CRITICAL: if customer.identity.language_pref

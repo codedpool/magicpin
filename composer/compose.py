@@ -66,15 +66,32 @@ async def compose(
     conversation_history = (merchant or {}).get("conversation_history") or []
 
     # ─── Stage 1: PLAN ──────────────────────────────────────────────────────
-    plan_dict = await plan_stage(
-        category=category or {},
-        merchant=merchant or {},
-        trigger=trigger or {},
-        customer=customer,
-        interpreted_signals=interpreted,
-        digest_item=digest_item,
-        is_hand_tuned=is_hand_tuned,
-    )
+    try:
+        plan_dict = await plan_stage(
+            category=category or {},
+            merchant=merchant or {},
+            trigger=trigger or {},
+            customer=customer,
+            interpreted_signals=interpreted,
+            digest_item=digest_item,
+            is_hand_tuned=is_hand_tuned,
+        )
+    except Exception as e:  # noqa: BLE001 — never crash on PLAN failures
+        logger.warning(
+            "compose.plan_exception",
+            extra={"kind": kind, "exc_type": type(e).__name__, "exc": str(e)[:200]},
+        )
+        # Sensible defaults — let DRAFT do the heavy lifting
+        plan_dict = {
+            "selected_facts": [],
+            "compulsion_levers": ["specificity", "social_proof"],
+            "voice_notes": (category or {}).get("voice", {}).get("tone", "peer"),
+            "language": _default_language_simple(merchant, customer),
+            "cta_shape": "open_ended",
+            "send_as": "merchant_on_behalf" if customer else "vera",
+            "should_send": True,
+            "skip_reason": "",
+        }
 
     if not plan_dict.get("should_send", True):
         logger.info(
@@ -265,6 +282,21 @@ async def compose(
 
 
 # ─── helpers ────────────────────────────────────────────────────────────────
+
+def _default_language_simple(merchant: dict[str, Any] | None, customer: dict[str, Any] | None) -> str:
+    if customer:
+        pref = (customer.get("identity") or {}).get("language_pref")
+        if pref:
+            return pref
+    langs = ((merchant or {}).get("identity") or {}).get("languages") or ["en"]
+    if "hi" in langs:
+        return "hi-en mix"
+    if "te" in langs:
+        return "te-en mix"
+    if "kn" in langs:
+        return "kn-en mix"
+    return "en"
+
 
 def _normalize_cta(shape: str) -> str:
     mapping = {
