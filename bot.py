@@ -144,7 +144,7 @@ async def healthz() -> HealthzResponse:
 async def metadata() -> MetadataResponse:
     return MetadataResponse(
         team_name=settings.BOT_TEAM_NAME,
-        team_members=[settings.BOT_CONTACT_EMAIL or "Solo"],
+        team_members=[settings.BOT_TEAM_NAME],  # name(s), not email
         model="groq-llama-3.3-70b + groq-gpt-oss-120b + groq-llama-3.1-8b + groq-qwen3-32b",
         approach=(
             "Multi-stage composer (PLAN→DRAFT→VALIDATE→SELF-SCORE→REFINE) "

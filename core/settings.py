@@ -50,9 +50,9 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str
 
     # ─── Bot identity ────────────────────────────────────────────────────────
-    BOT_TEAM_NAME: str = "Solo Submission"
-    BOT_VERSION: str = "0.1.0"
-    BOT_CONTACT_EMAIL: str = ""
+    BOT_TEAM_NAME: str = "Romanch Roshan Singh"
+    BOT_VERSION: str = "1.0.0"
+    BOT_CONTACT_EMAIL: str = "romanchroshansingh@gmail.com"
 
     # ─── Runtime tuning ──────────────────────────────────────────────────────
     TICK_DEADLINE_SECONDS: int = 25
