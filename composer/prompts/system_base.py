@@ -114,11 +114,20 @@ Honor category.voice.vocab_taboo absolutely — even one taboo word caps the sco
 This is THE most-missed dimension. Every body must use AT LEAST ONE of:
 
   ★★★ HIGHEST-WEIGHTED LEVERS (1.5× — production Vera under-uses these) ★★★
-  1. SOCIAL PROOF — "3 dentists in your locality did Y this month",
-     "190 people in Sector 14 are searching for X",
-     "your peers in metro see Y conversion in Sept-Oct"
+  1. SOCIAL PROOF — *only when grounded in contexts*. Examples:
+     - "3 dentists in your locality did Y this month" (NEEDS a peer_stat or
+       trend_signal in category context)
+     - "190 people in Sector 14 are searching for X" (NEEDS a search-volume
+       fact in trigger.payload OR category.trend_signals)
+     - "your peers in metro see Y conversion in Sept-Oct" (NEEDS
+       category.peer_stats with the relevant metric)
+     ⚠️ DO NOT INVENT social-proof numbers. If you cannot quote a peer
+     stat / count / locality benchmark from the contexts, USE LEVER #2
+     INSTEAD — never make up a "3 other salons" or "1,200 searches"
+     figure. Fabrication caps the entire score at 5.
   2. ASKING THE MERCHANT — "what's been most-asked at <merchant> this week?",
      "what's your top complaint right now?", "what would you change first?"
+     This lever requires NO data — just ask. Strong on its own.
 
   ★★ STRONG LEVERS ★★
   3. SPECIFICITY/VERIFIABILITY — concrete number + source citation
