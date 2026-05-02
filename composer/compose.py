@@ -33,11 +33,30 @@ from composer.stages.self_score import min_dim, self_score as self_score_stage, 
 from validators import validate_pipeline
 
 
-COMPOSER_VERSION = "0.4.0-leak-fix"
+COMPOSER_VERSION = "0.5.0-ab-ready"
 # Lifted 7 → 8 — fire REFINE more aggressively for the polish pass.
 # REFINE ships best-of-2 (re-validated + re-scored), so we never get worse.
 MIN_DIM_REFINE_THRESHOLD = 8
 MAX_DRAFT_RETRIES = 2  # 1 original + 1 retry on validator fail
+
+
+def choose_variant(merchant: dict[str, Any] | None, trigger: dict[str, Any] | None) -> str:
+    """
+    Pick a system-prompt variant for this compose call.
+
+    Currently returns 'standard' for 100% of traffic. To start an A/B:
+      - register a new variant in composer/prompts/system_base.py
+        (SYSTEM_BASE_VARIANTS dict)
+      - replace this body with hash-based routing, e.g.:
+            import hashlib
+            mid = (merchant or {}).get('merchant_id', '')
+            hexdigest = hashlib.sha256(mid.encode()).hexdigest()
+            return 'experiment-A' if int(hexdigest[:2], 16) < 25 else 'standard'
+        — gives ~10% to the experiment, deterministic per merchant
+      - dashboards already show variant distribution (/admin/health)
+      - Supabase logs every send's variant_id for replay/audit
+    """
+    return "standard"
 
 
 async def compose(
@@ -115,9 +134,12 @@ async def compose(
         return None
 
     # ─── Stages 2 + 3: DRAFT → VALIDATE (with one retry on failure) ────────
+    # A/B variant chosen here so it's stable across DRAFT retries.
+    variant_id = choose_variant(merchant, trigger)
     feedback: str | None = None
     body = ""
     last_validation = None
+    used_variant: str = variant_id
 
     for attempt in range(MAX_DRAFT_RETRIES):
         try:
@@ -130,7 +152,9 @@ async def compose(
                 interpreted_signals=interpreted,
                 digest_item=digest_item,
                 feedback=feedback,
+                variant_id=variant_id,
             )
+            used_variant = draft_dict.get("variant_id", variant_id)
         except Exception as e:  # noqa: BLE001 — never crash a compose
             logger.warning(
                 "compose.draft_exception",
@@ -270,6 +294,7 @@ async def compose(
         f"ENG:{final_scores.get('engagement_compulsion')} "
         f"total={total(final_scores)}/50 "
         f"refined={refined_used} "
+        f"variant={used_variant} "
         f"composer_version={COMPOSER_VERSION}"
     )
 

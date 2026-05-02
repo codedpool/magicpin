@@ -74,12 +74,16 @@ async def draft(
     interpreted_signals: list[str],
     digest_item: dict[str, Any] | None,
     feedback: str | None = None,
+    *,
+    variant_id: str | None = None,
 ) -> dict[str, Any]:
     """
-    Run the DRAFT stage. Returns dict with body + rationale.
+    Run the DRAFT stage. Returns dict with body + rationale + variant_id.
     Falls back to safe defaults on parse error so the pipeline still ships SOMETHING.
 
     `feedback` is appended on re-DRAFT (when validators rejected the first attempt).
+    `variant_id` selects an A/B prompt variant from system_base.SYSTEM_BASE_VARIANTS.
+       None (default) → 'standard'.
     """
     kind = trigger.get("kind", "default")
     kind_module = kind_router.route(kind)
@@ -166,11 +170,14 @@ async def draft(
     if feedback:
         user_msg += f"\n\n=== FEEDBACK FROM PREVIOUS ATTEMPT ===\n{feedback}\n"
 
+    # Resolve A/B variant — falls back to 'standard' if variant_id is unknown/None
+    resolved_variant_id, system_prompt = get_variant(variant_id)
+
     groq = get_groq()
     raw = await groq.complete(
         Purpose.DRAFT,
         prompt=user_msg,
-        system=SYSTEM_BASE,
+        system=system_prompt,
         json_mode=True,
         temperature=0.0,
     )
@@ -188,5 +195,6 @@ async def draft(
         "body": body,
         "rationale": rationale,
         "model": "llama-3.3-70b-versatile",
+        "variant_id": resolved_variant_id,
         "raw_response": raw,
     }

@@ -4,11 +4,22 @@ exemplars. This is the SYSTEM message common to every kind-specific prompt.
 
 Tuned to maximize the 5-dimension rubric score:
   decision_quality, specificity, category_fit, merchant_fit, engagement_compulsion.
+
+A/B-testable architecture (engagement-design.md requirement):
+- SYSTEM_BASE_VARIANTS holds N named variants
+- composer picks one per request via choose_variant()
+- variant_id is logged in every rationale + ComposedMessage
+- new variants register here without changes to the composer code
+- audit + replay possible via /admin/conversations + Supabase persistence
+
+Currently 1 active variant: 'standard'. Production rollout would add e.g.
+'curiosity-first' / 'social-proof-heavy' and route a small slice via
+choose_variant() — see composer/compose.py.
 """
 
 from __future__ import annotations
 
-SYSTEM_BASE = """\
+SYSTEM_BASE_STANDARD = """\
 You are Vera — magicpin's AI assistant for Indian local-commerce merchants.
 You are NOT a marketer. You are a peer-grade operator who texts a busy owner
 over WhatsApp. Your output is judged by an LLM on 5 dimensions (0-10 each):
@@ -167,3 +178,35 @@ Return ONLY this JSON object — no markdown fences, no commentary:
   "rationale": "<one short sentence: which 1-2 levers + which signal you anchored on + why this combination>"
 }
 """
+
+# ─── A/B variant registry ───────────────────────────────────────────────────
+# Future variants (curiosity-first, social-proof-heavy, owner-tone-warmer, etc.)
+# can be added here without changing composer code. Each variant has a stable
+# id used for logging + dashboard reporting.
+
+SYSTEM_BASE_VARIANTS: dict[str, str] = {
+    "standard": SYSTEM_BASE_STANDARD,
+}
+
+# Default routing: 100% to "standard" until production data justifies a split.
+# To enable a new variant, register it here AND add a routing rule in
+# composer/compose.py:choose_variant().
+SYSTEM_BASE_DEFAULT = "standard"
+
+# Backward-compat alias (some modules import SYSTEM_BASE directly)
+SYSTEM_BASE = SYSTEM_BASE_VARIANTS[SYSTEM_BASE_DEFAULT]
+
+
+def get_variant(variant_id: str | None = None) -> tuple[str, str]:
+    """
+    Return (variant_id, prompt_text) for the requested variant.
+    Falls back to default if variant_id is unknown or None.
+    """
+    if variant_id and variant_id in SYSTEM_BASE_VARIANTS:
+        return variant_id, SYSTEM_BASE_VARIANTS[variant_id]
+    return SYSTEM_BASE_DEFAULT, SYSTEM_BASE_VARIANTS[SYSTEM_BASE_DEFAULT]
+
+
+def list_variants() -> list[str]:
+    """All registered variant ids."""
+    return list(SYSTEM_BASE_VARIANTS.keys())
