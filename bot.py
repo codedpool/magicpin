@@ -125,7 +125,7 @@ def _utc_iso_now() -> str:
 
 # ─── endpoints ───────────────────────────────────────────────────────────────
 
-@app.get("/v1/healthz", response_model=HealthzResponse)
+@app.api_route("/v1/healthz", methods=["GET", "HEAD"], response_model=HealthzResponse)
 async def healthz() -> HealthzResponse:
     counts = ContextCounts(
         category=await store.context_count("category"),
@@ -140,7 +140,7 @@ async def healthz() -> HealthzResponse:
     )
 
 
-@app.get("/v1/metadata", response_model=MetadataResponse)
+@app.api_route("/v1/metadata", methods=["GET", "HEAD"], response_model=MetadataResponse)
 async def metadata() -> MetadataResponse:
     return MetadataResponse(
         team_name=settings.BOT_TEAM_NAME,
@@ -283,7 +283,7 @@ async def reply(body: ReplyBody) -> Any:
 
 # ─── root: friendly placeholder until Vera Console (Phase O) ─────────────────
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root() -> dict[str, Any]:
     return {
         "service": "Vera Bot",
