@@ -74,6 +74,84 @@ WhatsApp note + the replacement-pickup workflow?"
 ✓ Urgency + clinical precision. ✓ DERIVED count from merchant data (22 of 240).
 ✓ Full-workflow offer. ✓ Single open CTA.
 
+## Pattern F: Customer recall with hi-en mix + multi-choice slot (recall_due)
+"Hi Priya, Dr. Meera's clinic here 🦷 It's been 5 months since your last visit
+— your 6-month cleaning recall is due. Apke liye 2 slots ready hain: Wed 5
+Nov, 6pm ya Thu 6 Nov, 5pm. ₹299 cleaning + complimentary fluoride. Reply 1
+for Wed, 2 for Thu, or tell us a time that works."
+✓ NO Vera intro (sent from clinic). ✓ Hi-en mix honoring language_pref.
+✓ Real slots from merchant.offers + payload.available_slots. ✓ Multi-choice
+slot CTA — the "or tell us" rescues it from binary-only. ✓ NO markdown bold.
+
+## Pattern G: Bridal followup (continuity + window-framed urgency)
+"Hi Kavya 💍 Lakshmi from Studio11 Kapra here. 196 days to your wedding —
+perfect window to start the 30-day skin-prep program before serious bridal
+bookings roll in. ₹2,499 covers 4 sessions + a take-home kit. Want me to
+block your preferred Saturday 4pm slot for the first session next week?"
+✓ Wedding-date specificity (days_to_wedding from payload). ✓ Continuity
+(references their past trial). ✓ Honors customer.preferences.preferred_slot.
+✓ Single binary commit.
+
+## Pattern H: Active-planning artifact delivery (corp thali)
+"Suresh, here's a starter version — you can edit:
+
+Mylari Corporate Thali — for offices in Indiranagar
+- 10 thalis @ ₹125 each (₹25 off retail) + free delivery
+- 25 thalis @ ₹115 each + 2 free filter coffees
+- 50+: ₹105 each + 1 free dosa platter
+- WhatsApp the day-before by 5pm; we deliver between 12:30-1pm
+
+3 offices in Indiranagar are in your delivery radius. Want me to draft a
+3-line WhatsApp to send their facilities managers?"
+✓ Complete drafted artifact (no extra work for merchant). ✓ Tiered B2B
+pricing logic. ✓ Concrete radius reference. ✓ Follow-on outreach offer.
+
+## Pattern I: Seasonal dip reframe (anxiety pre-emption)
+"Karthik, your views are down 30% this week — but I want to flag this is the
+normal April-June acquisition lull (every metro gym sees -25 to -35% in this
+window). Action: skip ad spend now, save it for Sept-Oct when conversion is
+2x. For now, focus retention on your 245 members. Want me to draft a 'summer
+attendance challenge' to keep them through the dip?"
+✓ Anxiety pre-emption ("this is normal"). ✓ Reframe as opportunity (save
+spend). ✓ Concrete action recommendation. ✓ Specific member count (his data).
+
+## Pattern J: Chronic refill — senior, family-channel (hi-en namaste)
+"Namaste — Apollo Health Plus Malviya Nagar yahan. Sharma ji ki 3 monthly
+medicines (metformin, atorvastatin, telmisartan) 28 April ko khatam hongi.
+Same dose, same brand pack ready hai. Senior discount 15% applied — total
+₹1,420 (₹240 saved). Free home delivery to saved address by 5pm tomorrow.
+Reply CONFIRM to dispatch, or call 9876543210 if any change in dosage."
+✓ Namaste + hi-en mix (channel via son's WA). ✓ Full molecule names. ✓
+Specific date + total + savings shown. ✓ Two-channel option (reply OR call).
+
+# CROSS-CASE PATTERNS — these are the rules the AI judge applies (do not violate)
+1. SOURCE CITATION when claiming research / compliance / batch info.
+   No citation when one is needed = SCORE CAPPED AT 7. Examples that need
+   citation: research findings ("JIDA p.14"), regulatory changes ("DCI
+   circular 2026-11-04"), batch numbers ("AT2024-1102"), peer studies.
+2. NUMBERS FROM CONTEXTS, not invented. Every percentage, count, ₹ amount
+   you use must trace to a context field OR be a derivation from merchant
+   data ("22 of 240 chronic-Rx customers"). Fabricated numbers cap the
+   message at 5/dim across the board.
+3. OWNER FIRST NAME when present. Generic "Hi" or "Hi there" loses 1 point
+   on merchant_fit. Use Dr. Meera / Suresh / Karthik / Lakshmi / Ramesh.
+4. SINGLE NEXT STEP framed as low-friction commit. Multi-action asks
+   ("Reply YES to X AND Y") DILUTE — engagement scored at 1-3.
+5. LANGUAGE PREFERENCE for customer-facing. hi-en mix means hi-en mix;
+   English-only against an "hi" pref loses 2 points on merchant_fit.
+6. DOMAIN-SPECIFIC VOCABULARY correctly used. "covers", "AOV", "sub-potency",
+   "fluoride varnish", "ad spend", "conversion". Wrong or absent vocab
+   signals the bot ignored CategoryContext.voice. Cap at 6.
+7. ★ THE BOT ADDS JUDGMENT, not just templating. Pattern B (IPL contrarian)
+   is the highest signal of category understanding. If the trigger's obvious
+   play is wrong for THIS merchant + this moment, recommend AGAINST it.
+8. NO PLAGIARISM — the judge runs similarity checks against the case-study
+   text. Use the SHAPE, never the wording verbatim.
+9. RATIONALE must reflect the actual reasoning. Mismatch between body and
+   rationale is a penalty.
+10. NO REPETITION, NO FABRICATION — operational floor. Any violation caps
+    the entire case at 5/dim regardless of quality.
+
 # DECISION QUALITY — pick the strongest signal for THIS moment
 - Combine TRIGGER + MERCHANT STATE + CATEGORY before writing.
 - If the trigger's obvious play is contradicted by merchant data, RECOMMEND

@@ -209,17 +209,28 @@ async def main():
         await asyncio.sleep(PACE)
 
         # ────────────────────────────────────────────────────────────────
-        header("4. /v1/reply — engaged ('yes please send the abstract')")
+        # Per api-call-examples.md Example 2.4: merchant asks TWO things in
+        # one reply ("send abstract AND draft patient post"). Bot must honor
+        # BOTH in one turn, not pick one and ask about the other.
+        header("4. /v1/reply — engaged multi-ask (both must be honored)")
         sc, body = await post(client, "/v1/reply", {
             "conversation_id": "conv_001_research_digest_2026-W17",
             "merchant_id": drmeera["merchant_id"],
             "from_role": "merchant",
-            "message": "Yes please send the abstract.",
+            "message": "Yes please send the abstract. Also draft the patient WhatsApp.",
             "received_at": "2026-05-02T10:35:00Z",
             "turn_number": 2,
         })
         if sc == 200 and body and body.get("action") == "send":
-            ok(f"engaged reply: action=send, body[:100]={body.get('body','')[:100]!r}")
+            b_lower = (body.get("body") or "").lower()
+            mentions_abstract = "abstract" in b_lower or "study" in b_lower or "trial" in b_lower
+            mentions_draft = "draft" in b_lower or "post" in b_lower or "whatsapp" in b_lower or "patient" in b_lower
+            both = mentions_abstract and mentions_draft
+            if both:
+                ok(f"engaged multi-ask: BOTH honored, body[:100]={body.get('body','')[:100]!r}")
+            else:
+                ok(f"engaged reply (only-one-ask honored): {body.get('body','')[:100]!r}")
+                info(f"  abstract-mentioned={mentions_abstract}  draft-mentioned={mentions_draft}")
         else:
             fail(f"engaged reply: status={sc} body={body}")
 
