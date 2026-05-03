@@ -73,6 +73,20 @@ def detect(message: str, conversation: dict[str, Any] | None) -> bool:
     return False
 
 
+def detection_confidence(message: str, conversation: dict[str, Any] | None) -> str:
+    """Classify the auto-reply detection signal:
+       - "canned": high confidence (matches WhatsApp Business canned-reply pattern)
+       - "repetition": medium confidence (verbatim/near-verbatim of a prior turn)
+       - "none": no signal
+    Used by handler to decide whether to escalate immediately or use the ladder.
+    """
+    if is_canned(message):
+        return "canned"
+    if is_repetition_of_prior(message, conversation):
+        return "repetition"
+    return "none"
+
+
 def escalate(count: int) -> dict[str, Any]:
     """Return the action JSON for auto-reply escalation level `count` (1, 2, 3+).
 

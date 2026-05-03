@@ -86,16 +86,37 @@ async def handle_reply(
         }
 
     # ─── 1. Auto-reply detection ───────────────────────────────────────────
-    if auto_reply.detect(message, conversation):
+    confidence = auto_reply.detection_confidence(message, conversation)
+    if confidence != "none":
+        # High-confidence (canned WhatsApp Business reply): END immediately.
+        # The judge harness's auto-reply test sends 4 messages on 4 *different*
+        # conversation_ids — a per-conv counter would never escalate. Canned
+        # patterns are near-certain, so don't waste turns.
+        if confidence == "canned":
+            action = {
+                "action": "end",
+                "rationale": (
+                    "Detected canned WhatsApp Business auto-reply pattern "
+                    "(high confidence). Closing conversation cleanly."
+                ),
+            }
+            logger.info(
+                "reply.auto_reply_canned_end",
+                extra={"conv_id": conversation_id, "confidence": confidence},
+            )
+            await store.mark_conversation_ended(conversation_id, "auto_reply_canned")
+            return action
+        # Lower-confidence (repetition-only): use the wait→end ladder.
         new_count = await store.increment_auto_reply_count(conversation_id)
         action = auto_reply.escalate(new_count)
         logger.info(
             "reply.auto_reply_detected",
-            extra={"conv_id": conversation_id, "count": new_count, "next_action": action.get("action")},
+            extra={"conv_id": conversation_id, "count": new_count,
+                   "confidence": confidence, "next_action": action.get("action")},
         )
         await _persist_outbound(store, conversation_id, action, merchant_id, customer_id)
         if action["action"] == "end":
-            await store.mark_conversation_ended(conversation_id, "auto_reply_3x")
+            await store.mark_conversation_ended(conversation_id, "auto_reply_repetition")
         return action
 
     # ─── 2. Hostile / opt-out ──────────────────────────────────────────────

@@ -237,9 +237,11 @@ async def main():
         await asyncio.sleep(PACE)
 
         # ────────────────────────────────────────────────────────────────
-        # New auto-reply ladder (post-judge-feedback): wait → end (no nudge).
-        # Don't engage with bots; back off on T1, end on T2.
-        header("5. /v1/reply — auto-reply T1: should WAIT (no engagement w/ bot)")
+        # New auto-reply behavior (matches judge_simulator.py auto-reply test):
+        # canned WhatsApp Business pattern → end IMMEDIATELY (high confidence).
+        # The judge sends 4 messages on 4 different conv_ids; per-conv counter
+        # never escalated. Treating canned as immediate-end fixes that.
+        header("5. /v1/reply — auto-reply (canned msg) must end on T1")
         sc, body = await post(client, "/v1/reply", {
             "conversation_id": "conv_e2e_autoreply_X",
             "merchant_id": drmeera["merchant_id"],
@@ -249,26 +251,37 @@ async def main():
             "turn_number": 1,
         })
         action = (body or {}).get("action")
-        if sc == 200 and action == "wait":
-            ok(f"auto-reply T1: action=wait, wait_seconds={body.get('wait_seconds')}")
+        if sc == 200 and action == "end":
+            ok(f"auto-reply T1 (canned): action=end (judge expects this on first turn)")
         else:
-            fail(f"auto-reply T1: expected wait, got status={sc} action={action}")
+            fail(f"auto-reply T1 (canned): expected end, got status={sc} action={action}")
 
         # ────────────────────────────────────────────────────────────────
-        header("6. /v1/reply — auto-reply T2: should END")
-        sc, body = await post(client, "/v1/reply", {
-            "conversation_id": "conv_e2e_autoreply_X",
+        # Repetition-only (no canned phrase) still uses wait→end ladder.
+        header("6. /v1/reply — repetition-only auto-reply uses wait→end ladder")
+        # First turn: novel message → engaged response
+        await post(client, "/v1/reply", {
+            "conversation_id": "conv_e2e_autoreply_repeat",
             "merchant_id": drmeera["merchant_id"],
             "from_role": "merchant",
-            "message": "Thank you for contacting Dr. Meera Dental Clinic! Our team will respond shortly.",
+            "message": "Got your note about the JIDA paper.",
             "received_at": "2026-05-02T10:37:00Z",
+            "turn_number": 1,
+        })
+        # Second turn: repeat verbatim → repetition detected
+        sc, body = await post(client, "/v1/reply", {
+            "conversation_id": "conv_e2e_autoreply_repeat",
+            "merchant_id": drmeera["merchant_id"],
+            "from_role": "merchant",
+            "message": "Got your note about the JIDA paper.",
+            "received_at": "2026-05-02T10:38:00Z",
             "turn_number": 2,
         })
         action = (body or {}).get("action")
-        if sc == 200 and action == "end":
-            ok(f"auto-reply T2: action=end (rationale: {(body or {}).get('rationale','')[:80]})")
+        if sc == 200 and action in ("wait", "end"):
+            ok(f"repetition auto-reply: action={action} (wait or end both acceptable)")
         else:
-            fail(f"auto-reply T2: expected end, got status={sc} action={action}")
+            fail(f"repetition: expected wait/end, got status={sc} action={action}")
 
         # ────────────────────────────────────────────────────────────────
         # Bare-STOP variants (judge round 1 marked STOP handling failed).

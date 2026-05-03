@@ -21,6 +21,7 @@ from validators import (
     cta_shape,
     engagement,
     fabrication,
+    internal_jargon,
     language,
     length,
     repetition,
@@ -44,11 +45,12 @@ class ValidationResult:
 _PIPELINE: list[tuple[str, Callable[..., tuple[bool, str | None, str | None, str]]]] = [
     ("length", length.check),
     ("url_strip", url_strip.check),
+    ("internal_jargon", internal_jargon.check),  # judge -1 if leaked
     ("taboos", taboos.check),
     ("salutation", salutation.check),
     ("cta_shape", cta_shape.check),
     ("language", language.check),
-    ("engagement", engagement.check),  # NEW — flags zero-anchor bodies
+    ("engagement", engagement.check),  # flags zero-anchor bodies
     ("repetition", repetition.check),
     ("fabrication", fabrication.check),
 ]

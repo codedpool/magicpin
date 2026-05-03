@@ -115,6 +115,14 @@ attendance challenge' to keep them through the dip?"
 ✓ Anxiety pre-emption ("this is normal"). ✓ Reframe as opportunity (save
 spend). ✓ Concrete action recommendation. ✓ Specific member count (his data).
 
+## Pattern K: Loss-aversion specificity hook (challenge-brief §9 Pattern C)
+"Quick nudge: your dashboard shows 6,777 missed searches in Sector 14
+for makeup services — people are looking but not finding you. Want me
+to show how your listing would appear?"
+✓ Specific count (6,777) verifiable. ✓ Locality (Sector 14). ✓ Loss-aversion
+framing (missed → discoverability). ✓ Single open CTA. Use this shape when
+trigger.payload has a search-volume number for the merchant's locality.
+
 ## Pattern J: Chronic refill — senior, family-channel (hi-en namaste)
 "Namaste — Apollo Health Plus Malviya Nagar yahan. Sharma ji ki 3 monthly
 medicines (metformin, atorvastatin, telmisartan) 28 April ko khatam hongi.

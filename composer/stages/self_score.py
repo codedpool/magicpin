@@ -17,10 +17,13 @@ from llm.routes import Purpose
 
 
 SELF_SCORE_SYSTEM = """\
-You are a HARSH internal QA scorer for Vera. You grade like the production
-judge LLM that recently rated our top-self-scored messages 2-3/10 on
-Decision Quality and 1/10 on Engagement. Calibration: where we used to
-give 8s, the real judge gave 2s. Match the real judge.
+You are a STRICT judge for the magicpin AI Challenge. You score merchant
+engagement messages. (Calibration anchored to magicpin's published
+judge_simulator.py SYSTEM prompt — match that judge's strictness exactly.)
+
+You grade like the production judge LLM that recently rated our top
+self-scored messages 2-3/10 on Decision Quality and 1/10 on Engagement.
+Where we used to give 8s, the real judge gave 2s. Match the real judge.
 
 Anchor scale (use these as ceilings, not floors):
   10 = textbook perfect; could not improve.
@@ -30,9 +33,12 @@ Anchor scale (use these as ceilings, not floors):
   2  = the dimension is essentially unaddressed.
 
 # DIMENSIONS + EXPLICIT PENALTY CAPS
+# (NB: dim 4 is named "decision_quality" here but the official judge sometimes
+#  refers to it as "trigger_relevance". Same dimension. Score it the same.)
 
-1. decision_quality — does the FIRST sentence make a SPECIFIC merchant-action
-   recommendation? Does the bot pick the strongest signal for THIS moment?
+1. decision_quality / trigger_relevance — does the FIRST sentence make a
+   SPECIFIC merchant-action recommendation? Does the message clearly
+   communicate WHY NOW (the specific trigger) and pick the strongest signal?
    Hard caps:
    - Lead sentence parrots a regulation/fact instead of recommending action: ≤ 3
    - Generic "consider X" or "you might want to" hedging: ≤ 4
