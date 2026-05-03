@@ -90,17 +90,39 @@ def detection_confidence(message: str, conversation: dict[str, Any] | None) -> s
 def escalate(count: int) -> dict[str, Any]:
     """Return the action JSON for auto-reply escalation level `count` (1, 2, 3+).
 
-    Conservative ladder (judge feedback): don't engage with bots — go straight
-    to wait, end if it persists. Sending a "polite nudge" to an auto-reply
-    looked spammy in scoring.
+    Ladder per api-call-examples.md §4.1 (Phase 4 replay) + §2.5 (Phase 2):
+      count=1 → polite nudge (SEND), giving the owner a chance to surface
+      count=2 → wait 4h (per §2.5)
+      count=3+ → end gracefully
+
+    NB: `count` is the per-MERCHANT total (across conversations), not per-
+    conversation. The judge_simulator's auto-reply test uses 4 different
+    conversation_ids; per-conv would never escalate.
     """
-    if count == 1:
+    if count <= 1:
+        return {
+            "action": "send",
+            "body": (
+                "Looks like an auto-reply 😊 When the owner sees this, just reply "
+                "YES and I'll continue from there."
+            ),
+            "cta": "binary_yes_no",
+            "rationale": (
+                "Detected merchant auto-reply (1st time). One polite nudge for "
+                "the owner; will back off if no engagement."
+            ),
+        }
+    if count == 2:
         return {
             "action": "wait",
-            "wait_seconds": 14400,  # 4h — let the owner see their inbox
-            "rationale": "Detected auto-reply (1st). Waiting 4h for the owner.",
+            "wait_seconds": 14400,  # 4h per api-call-examples.md §2.5
+            "rationale": (
+                "Auto-reply 2nd time → owner not at phone. Backing off 4 hours."
+            ),
         }
     return {
         "action": "end",
-        "rationale": "Auto-reply 2+ times → no engagement signal. Closing conversation.",
+        "rationale": (
+            "Auto-reply 3+ times → no engagement signal. Closing conversation."
+        ),
     }

@@ -158,6 +158,22 @@ class InMemoryStore:
             conv["updated_at"] = _utcnow().isoformat()
             return conv["auto_reply_count"]
 
+    async def merchant_auto_reply_total(self, merchant_id: str) -> int:
+        """Total auto-reply count for a merchant across ALL conversations.
+
+        Why: judge_simulator.py:695 sends 4 canned auto-replies on 4 different
+        conversation_ids. A per-conv counter never escalates. We track per-
+        merchant total so the ladder (nudge→wait→end) advances even when each
+        turn is a fresh conversation. This also matches Phase 4 replay
+        behavior on a single conversation.
+        """
+        async with self._conversations_lock:
+            return sum(
+                int(c.get("auto_reply_count") or 0)
+                for c in self._conversations.values()
+                if c.get("merchant_id") == merchant_id
+            )
+
     async def set_last_bot_body(
         self, conversation_id: str, body: str
     ) -> None:

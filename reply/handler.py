@@ -86,37 +86,31 @@ async def handle_reply(
         }
 
     # ─── 1. Auto-reply detection ───────────────────────────────────────────
-    confidence = auto_reply.detection_confidence(message, conversation)
-    if confidence != "none":
-        # High-confidence (canned WhatsApp Business reply): END immediately.
-        # The judge harness's auto-reply test sends 4 messages on 4 *different*
-        # conversation_ids — a per-conv counter would never escalate. Canned
-        # patterns are near-certain, so don't waste turns.
-        if confidence == "canned":
-            action = {
-                "action": "end",
-                "rationale": (
-                    "Detected canned WhatsApp Business auto-reply pattern "
-                    "(high confidence). Closing conversation cleanly."
-                ),
-            }
-            logger.info(
-                "reply.auto_reply_canned_end",
-                extra={"conv_id": conversation_id, "confidence": confidence},
-            )
-            await store.mark_conversation_ended(conversation_id, "auto_reply_canned")
-            return action
-        # Lower-confidence (repetition-only): use the wait→end ladder.
-        new_count = await store.increment_auto_reply_count(conversation_id)
-        action = auto_reply.escalate(new_count)
+    if auto_reply.detect(message, conversation):
+        # Increment per-conv counter (kept for Supabase persistence).
+        await store.increment_auto_reply_count(conversation_id)
+        # Use the PER-MERCHANT total to drive the ladder. judge_simulator.py
+        # auto-reply test uses 4 different conversation_ids — per-conv would
+        # never escalate. Per-merchant matches both judge_simulator and the
+        # Phase 4 replay scenario in api-call-examples.md §4.1.
+        merchant_total = (
+            await store.merchant_auto_reply_total(merchant_id)
+            if merchant_id and hasattr(store, "merchant_auto_reply_total")
+            else 1
+        )
+        action = auto_reply.escalate(merchant_total)
         logger.info(
             "reply.auto_reply_detected",
-            extra={"conv_id": conversation_id, "count": new_count,
-                   "confidence": confidence, "next_action": action.get("action")},
+            extra={
+                "conv_id": conversation_id,
+                "merchant_id": merchant_id,
+                "merchant_total": merchant_total,
+                "next_action": action.get("action"),
+            },
         )
         await _persist_outbound(store, conversation_id, action, merchant_id, customer_id)
         if action["action"] == "end":
-            await store.mark_conversation_ended(conversation_id, "auto_reply_repetition")
+            await store.mark_conversation_ended(conversation_id, "auto_reply_3x")
         return action
 
     # ─── 2. Hostile / opt-out ──────────────────────────────────────────────

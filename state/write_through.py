@@ -184,6 +184,9 @@ class WriteThroughStore:
             ))
         return new_count
 
+    async def merchant_auto_reply_total(self, merchant_id: str) -> int:
+        return await self.memory.merchant_auto_reply_total(merchant_id)
+
     async def set_last_bot_body(self, conversation_id: str, body: str) -> None:
         await self.memory.set_last_bot_body(conversation_id, body)
         conv = await self.memory.get_conversation(conversation_id)
