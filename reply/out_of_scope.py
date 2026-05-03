@@ -17,17 +17,44 @@ from llm.routes import Purpose
 
 
 CLASSIFY_SYSTEM = """\
-You decide whether a merchant's reply is ON-TOPIC for a Vera conversation about
-local-commerce growth (Google Business Profile, customer engagement, offers,
-performance, recall reminders, festival/event prep, research digests).
+You decide whether a merchant's reply is ON-TOPIC for a Vera conversation.
+Vera helps with growth/operations: GBP, customer engagement, offers,
+performance, recall reminders, festival/event prep, research digests, AND
+operational/compliance questions that trace to the active trigger.
 
-ON-TOPIC examples: questions about offers, listings, customers, photos, posts,
-performance numbers, the trigger Vera sent, "what should I do next", "draft it
-for me", etc.
+★ STRONG BIAS TOWARD ON-TOPIC. False off-topic classification (rejecting
+a legitimate help request) is far worse than a false on-topic — Vera should
+attempt to help unless the topic is CLEARLY unrelated to the merchant's
+business operations.
 
-OFF-TOPIC examples: GST filing, income tax, legal advice, real-estate help,
-unrelated personal questions, jokes, weather (unless it's a festival/heatwave
-that ties back to the trigger), recipe/cooking, "how's your day".
+ON-TOPIC (always):
+- Anything about offers, listings, customers, photos, posts, performance.
+- ANY question/help-request whose subject matter overlaps the active
+  trigger. Examples:
+    * trigger=regulation_change about X-ray dose + merchant says
+      "need help auditing my X-ray setup" → ON-TOPIC. Equipment audit
+      directly relates to the regulation Vera just flagged.
+    * trigger=supply_alert about a recalled drug + merchant says
+      "what's the replacement workflow?" → ON-TOPIC.
+    * trigger=competitor_opened + merchant says "what should I price at?"
+      → ON-TOPIC.
+- Equipment / clinical-process / operational questions for the merchant's
+  own business (X-ray unit upgrade, fryer maintenance, stylist scheduling,
+  inventory management, SOP writing) → ON-TOPIC. These ARE the merchant's
+  operations.
+- Requests for vendor recommendations, quotes, or workflow templates
+  → ON-TOPIC.
+
+OFF-TOPIC (only when clearly unrelated to running their business):
+- GST/income-tax filing (financial accounting outside Vera's scope)
+- Legal advice (litigation, contracts, IP)
+- Real-estate / personal property
+- Recipe/cooking advice (unrelated to running a restaurant)
+- "How's your day" / personal chitchat / jokes / weather chat
+- Adjacent businesses they don't run
+
+When in doubt, classify ON-TOPIC. Vera saying "I'll help" and providing
+an attempt is always better than a false redirect.
 
 Reply ONLY with this JSON object:
 { "on_topic": <true|false>, "reason": "<one short phrase>" }
@@ -63,16 +90,33 @@ async def classify_on_topic(message: str, original_trigger_kind: str | None = No
 
 
 def redirect(message: str, original_trigger_kind: str | None = None) -> dict[str, Any]:
-    """Polite redirect back to the original trigger when off-topic."""
+    """Polite redirect back to the original trigger when off-topic.
+
+    Picks a context-appropriate "the right person to ask" instead of always
+    saying "your CA". X-ray / clinical questions should never be redirected
+    to an accountant — that was a confusing miss in the first judging round.
+    """
     topic_phrase = (
         original_trigger_kind.replace("_", " ") if original_trigger_kind else "your growth"
     )
+    msg_lower = (message or "").lower()
+    # Pick a topical specialist based on what the merchant actually asked.
+    if any(t in msg_lower for t in ("gst", "tax", "income tax", "tds", "filing", "audit firm", "ca ", "accountant")):
+        specialist = "your CA / accountant"
+    elif any(t in msg_lower for t in ("legal", "court", "lawsuit", "contract", "advocate", "lawyer")):
+        specialist = "a lawyer / legal advisor"
+    elif any(t in msg_lower for t in ("rent", "lease", "real estate", "property", "broker")):
+        specialist = "a property advisor"
+    elif any(t in msg_lower for t in ("recipe", "cooking", "menu design", "chef")):
+        specialist = "a culinary consultant"
+    else:
+        specialist = "a specialist"
     return {
         "action": "send",
         "body": (
-            f"That's outside what I can help with directly — your CA / accountant "
-            f"can. Coming back to {topic_phrase}: want me to pick up where we left off?"
+            f"That's outside what I can help with directly — {specialist} would be a "
+            f"better fit. Coming back to {topic_phrase}: want me to pick up where we left off?"
         ),
         "cta": "binary_yes_no",
-        "rationale": f"Merchant went off-topic; declining politely + redirecting to {topic_phrase}.",
+        "rationale": f"Off-topic ({specialist} domain); declining politely + redirecting to {topic_phrase}.",
     }

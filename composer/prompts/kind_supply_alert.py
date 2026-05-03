@@ -1,6 +1,6 @@
 """
 kind_supply_alert — pharmacy-facing: voluntary recall on a molecule batch.
-Highest urgency. Specific batches. Vera derives count of affected customers.
+Highest urgency. Vera leads with the action the pharmacy must take.
 """
 
 from __future__ import annotations
@@ -10,28 +10,35 @@ KIND_NAME = "supply_alert"
 KIND_FRAMING = """\
 TRIGGER KIND: supply_alert (recall on molecule batches — Case Study 9)
 
-# FRAMING (Case Study 9 — pharmacy quality bar)
-1. Lead with URGENT: "voluntary recall on {N} {molecule} batches
-   ({batch_1}, {batch_2}) by {manufacturer} — {risk_level}, customers
-   should be informed for replacement."
-2. DERIVED COUNT — if merchant.customer_aggregate has chronic-Rx data
-   that matches this molecule: "Pulled your repeat-Rx list: {N} of your
-   chronic-Rx customers were dispensed these batches in last 90 days."
-3. RECIPROCITY — full workflow offer: "Want me to draft their WhatsApp
-   note + the replacement-pickup workflow?"
-4. Single open CTA.
+# FRAMING — action-first (pharmacy quality bar)
+1. LEAD with the merchant ACTION, then the recall as supporting fact:
+     ✗ "Voluntary recall on 2 atorvastatin batches by Mfr Z. {N} customers
+        affected. Want me to draft the workflow?"
+     ✓ "Ramesh — flag {N} of your chronic-Rx customers for replacement
+        before this week is out (atorvastatin batches AT2024-1102 +
+        AT2024-1108 by Mfr Z, sub-potency recall)."
+2. DERIVED COUNT (highest-scoring move) — if merchant.customer_aggregate
+   has chronic-Rx data matching this molecule, cite the count from THEIR
+   data. Never invent.
+3. ONE help offer that resolves the WHOLE workflow (low-friction):
+   "Want me to draft the WhatsApp note + pickup-workflow now?"
+4. Single binary close: "Reply YES — I'll have it ready in 5 min."
 
 # VOICE — pharmacy: trustworthy + precise. NO alarm.
 - Use exact molecule + batch terminology.
 - "Sub-potency" / "stability deviation" — clinical, not panicked.
-- ONE CTA — workflow-oriented.
 
 # HARD CONSTRAINTS
+- First sentence MUST contain the recommended pharmacist action (flag X
+  customers / pull Y units / pause dispensing of Z).
 - Cite trigger.payload.molecule, .affected_batches[], .manufacturer exactly.
 - Don't invent customer counts — derive only from merchant.customer_aggregate.
-- ONE CTA.
+- ONE CTA. NEVER stack ("draft note AND audit inventory AND..." → -5 ENG).
 """
 
-LEVER_HINT = "urgency + specificity (batch numbers + customer count) + reciprocity"
+LEVER_HINT = (
+    "decision_quality (lead with pharmacist action) + specificity (batch numbers + "
+    "derived customer count) + reciprocity (full workflow offer) + single binary CTA."
+)
 
 DEFAULT_CTA_SHAPE = "open_ended"

@@ -226,7 +226,9 @@ async def main():
         await asyncio.sleep(PACE)
 
         # ────────────────────────────────────────────────────────────────
-        header("5. /v1/reply — auto-reply (turn 1: should nudge)")
+        # New auto-reply ladder (post-judge-feedback): wait → end (no nudge).
+        # Don't engage with bots; back off on T1, end on T2.
+        header("5. /v1/reply — auto-reply T1: should WAIT (no engagement w/ bot)")
         sc, body = await post(client, "/v1/reply", {
             "conversation_id": "conv_e2e_autoreply_X",
             "merchant_id": drmeera["merchant_id"],
@@ -236,13 +238,13 @@ async def main():
             "turn_number": 1,
         })
         action = (body or {}).get("action")
-        if sc == 200 and action == "send":
-            ok("auto-reply turn 1: nudge sent (count=1)")
+        if sc == 200 and action == "wait":
+            ok(f"auto-reply T1: action=wait, wait_seconds={body.get('wait_seconds')}")
         else:
-            fail(f"auto-reply turn 1: status={sc} action={action}")
+            fail(f"auto-reply T1: expected wait, got status={sc} action={action}")
 
         # ────────────────────────────────────────────────────────────────
-        header("6. /v1/reply — auto-reply (turn 2: should wait)")
+        header("6. /v1/reply — auto-reply T2: should END")
         sc, body = await post(client, "/v1/reply", {
             "conversation_id": "conv_e2e_autoreply_X",
             "merchant_id": drmeera["merchant_id"],
@@ -252,26 +254,42 @@ async def main():
             "turn_number": 2,
         })
         action = (body or {}).get("action")
-        if sc == 200 and action == "wait":
-            ok(f"auto-reply turn 2: action=wait, wait_seconds={body.get('wait_seconds')}")
+        if sc == 200 and action == "end":
+            ok(f"auto-reply T2: action=end (rationale: {(body or {}).get('rationale','')[:80]})")
         else:
-            fail(f"auto-reply turn 2: status={sc} action={action}")
+            fail(f"auto-reply T2: expected end, got status={sc} action={action}")
 
         # ────────────────────────────────────────────────────────────────
-        header("7. /v1/reply — auto-reply (turn 3: should end)")
-        sc, body = await post(client, "/v1/reply", {
-            "conversation_id": "conv_e2e_autoreply_X",
-            "merchant_id": drmeera["merchant_id"],
-            "from_role": "merchant",
-            "message": "Thank you for contacting Dr. Meera Dental Clinic! Our team will respond shortly.",
-            "received_at": "2026-05-02T10:38:00Z",
-            "turn_number": 3,
-        })
-        action = (body or {}).get("action")
-        if sc == 200 and action == "end":
-            ok(f"auto-reply turn 3: action=end (rationale: {(body or {}).get('rationale','')[:80]})")
+        # Bare-STOP variants (judge round 1 marked STOP handling failed).
+        # Every common WhatsApp opt-out word should produce action=end.
+        header("7. /v1/reply — bare opt-out variants must all end")
+        bare_optouts = [
+            ("STOP", "conv_e2e_stop_caps"),
+            ("stop", "conv_e2e_stop_lower"),
+            ("No", "conv_e2e_no_word"),
+            ("unsubscribe", "conv_e2e_unsub"),
+            ("remove me", "conv_e2e_removeme"),
+        ]
+        all_end = True
+        for word, conv_id in bare_optouts:
+            sc, body = await post(client, "/v1/reply", {
+                "conversation_id": conv_id,
+                "merchant_id": "m_e2e_optout_test",  # throwaway — block won't poison Dr. Meera
+                "from_role": "merchant",
+                "message": word,
+                "received_at": "2026-05-02T10:39:00Z",
+                "turn_number": 1,
+            })
+            action = (body or {}).get("action")
+            if sc == 200 and action == "end":
+                info(f"  '{word}' -> action=end ✓")
+            else:
+                all_end = False
+                info(f"  '{word}' -> action={action} ✗")
+        if all_end:
+            ok("all 5 bare-opt-out variants returned action=end")
         else:
-            fail(f"auto-reply turn 3: status={sc} action={action}")
+            fail("some bare-opt-outs did NOT return action=end")
 
         # ────────────────────────────────────────────────────────────────
         header("8. /v1/reply — intent transition ('Ok lets do it')")
@@ -307,8 +325,41 @@ async def main():
         })
         action = (body or {}).get("action")
         body_lower = (body or {}).get("body", "").lower()
-        redirect = action == "send" and any(s in body_lower for s in ("ca ", "accountant", "outside", "back to"))
-        ok(f"out-of-scope: action=send with CA/back-to redirect ✓") if redirect else fail(f"out-of-scope: not redirected — body={(body or {}).get('body','')[:120]}")
+        # GST is clearly accountant-domain; redirect should mention CA/accountant/specialist.
+        redirect = action == "send" and any(s in body_lower for s in (
+            "ca ", "accountant", "specialist", "outside", "back to", "coming back",
+        ))
+        ok("out-of-scope: action=send with topical redirect ✓") if redirect else fail(f"out-of-scope: not redirected — body={(body or {}).get('body','')[:120]}")
+
+        await asyncio.sleep(PACE)
+
+        await asyncio.sleep(PACE)
+
+        # ────────────────────────────────────────────────────────────────
+        # Regression test for judge round 1's exact failing OOS scenario:
+        # merchant asks for HELP related to the trigger domain (X-ray
+        # equipment auditing after a regulation_change about X-ray dose).
+        # Should NOT redirect to a CA — must engage and offer help.
+        header("9b. /v1/reply — equipment-help req (trigger-domain) must NOT OOS")
+        sc, body = await post(client, "/v1/reply", {
+            "conversation_id": "conv_e2e_equip_help",
+            "merchant_id": "m_e2e_equip_help_test",
+            "from_role": "merchant",
+            "message": "Got it doc - need help auditing my X-ray setup. We have an old D-speed film unit.",
+            "received_at": "2026-05-02T10:43:00Z",
+            "turn_number": 2,
+            "trigger_kind": "regulation_change",
+        })
+        action = (body or {}).get("action")
+        b_lower = (body or {}).get("body", "").lower()
+        # MUST NOT contain CA / accountant redirect for an equipment question
+        misclassified_oos = action == "send" and any(s in b_lower for s in (
+            "your ca", "ca/accountant", "ca / accountant", "accountant",
+        ))
+        if action == "send" and not misclassified_oos:
+            ok("equipment-help: engaged (not OOS-redirected to CA) ✓")
+        else:
+            fail(f"equipment-help: action={action} body={(body or {}).get('body','')[:150]!r}")
 
         await asyncio.sleep(PACE)
 
