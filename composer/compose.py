@@ -33,10 +33,13 @@ from composer.stages.self_score import min_dim, self_score as self_score_stage, 
 from validators import validate_pipeline
 
 
-COMPOSER_VERSION = "0.5.0-ab-ready"
-# Lifted 7 → 8 — fire REFINE more aggressively for the polish pass.
-# REFINE ships best-of-2 (re-validated + re-scored), so we never get worse.
-MIN_DIM_REFINE_THRESHOLD = 8
+COMPOSER_VERSION = "0.5.1-eng-tightened"
+# REFINE fires when ANY dimension is below this threshold. Bumped 8 → 9
+# after round-9 audit: judge consistently scores ENG at 6 when CTA lacks
+# time-cap; need REFINE to ALWAYS fire when ENG self-score is < 9 so the
+# polishing pass can add the time-cap. REFINE ships best-of-2 (re-validated
+# + re-scored), so we never ship worse than the original.
+MIN_DIM_REFINE_THRESHOLD = 9
 MAX_DRAFT_RETRIES = 2  # 1 original + 1 retry on validator fail
 
 

@@ -55,6 +55,18 @@ plan.compulsion_levers: {plan_levers}
 3. DO NOT fabricate any new claim — only use facts from the contexts.
 4. Honor plan.language (if hi-en mix, include natural Hindi tokens).
 5. Honor plan.cta_shape exactly.
+
+★★★ ENGAGEMENT-SPECIFIC FIXES (apply if weakest dim = engagement_compulsion) ★★★
+- If the original CTA lacks a TIME-CAP, add one. Examples that lift ENG 6→9:
+    "Reply YES — 5 min." / "live in 10 min." / "by EOD" / "in 30 sec"
+- If the CTA stacks asks ("Reply YES to X and Y"), collapse to ONE verb.
+- If body buries the CTA, move it to the LAST sentence.
+
+★★★ DECISION-QUALITY FIXES (apply if weakest dim = decision_quality) ★★★
+- If lead is passive ("your X needs Y"), rewrite to active ("replace your X").
+- If lead recites a fact, rewrite to lead with the merchant action.
+- The first 8 words must contain owner_first_name + an active verb of action.
+
 6. Output ONLY this JSON (no commentary):
 
 {{

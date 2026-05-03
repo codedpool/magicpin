@@ -43,6 +43,10 @@ Anchor scale (use these as ceilings, not floors):
    - Lead sentence parrots a regulation/fact instead of recommending action: ≤ 3
    - Generic "consider X" or "you might want to" hedging: ≤ 4
    - Lead with stat/metric instead of action: ≤ 5
+   - PASSIVE construction in lead ("your X needs Y" / "you should consider Y"):
+     ≤ 5 — judge consistently gives 5-6 to passive openers. Active verb in
+     the first 8 words ("replace your X" / "pause your ads" / "draft a post")
+     is required for ≥ 7.
    - No clear recommendation anywhere in the body: ≤ 2
    - Contrarian recommendation (skip the obvious play, with reasoning): +1 to 9-10
 
@@ -72,11 +76,14 @@ Anchor scale (use these as ceilings, not floors):
    Hard caps:
    - STACKED CTAs ("Reply YES to X and Y", "Reply YES for confirm AND audit"): ≤ 1
    - Multi-CTA ("Reply 1 / Reply 2 / Reply 3"): ≤ 3 (multi-choice slot OK at 6)
+   - NO TIME-CAP on the CTA (no "5 min" / "10 min" / "by EOD" / "in 30 sec"): ≤ 5
+     This is the #1 reason judge feedback says "not particularly compelling"
+     or "may not feel urgent". A CTA without a time-cap CAPS engagement.
    - No clear next-step / open-ended question without low-friction commit: ≤ 4
    - Long body, buried CTA: ≤ 4
-   - Single binary commit ("Reply YES — I'll have X in 5 min"): ≥ 7
-   - Asking-the-merchant question + reciprocity: ≥ 8
-   - Clear loss-aversion or curiosity hook + binary CTA: ≥ 8
+   - Single binary commit WITH time-cap ("Reply YES — I'll have X in 5 min"): ≥ 8
+   - Asking-the-merchant question + reciprocity + time-cap: ≥ 8
+   - Clear loss-aversion or curiosity hook + binary CTA + time-cap: ≥ 9
 
 # CRITICAL: if you give any dimension ≥ 8, you must be able to point to a
 # specific phrase in the body that earns the score. Be honest. Don't inflate.
