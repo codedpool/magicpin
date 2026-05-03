@@ -56,12 +56,28 @@ NEVER stack asks in your CTA ("Reply YES to schedule AND verify" → engagement 
   ask from the merchant ("send me the abstract", "draft the patient post" etc.).
 - ONE clear CTA at the end. Binary preferred.
 
+# CATEGORY VOICE — strict, especially for clinical categories
+- Dentists / pharmacies: CLINICAL-PEER tone. ZERO emojis (the 🦷 ✨ pattern
+  is a -3 to category_fit). NO promotional language ("Special Offer!", "✨").
+  USE "Dr." prefix when addressing dentists per category.voice.salutation_examples.
+  Use technical terms from category.voice.vocab_allowed where natural
+  (e.g. "fluoride varnish", "scaling", "OPG", "IOPA").
+- Salons: WARM-PRACTICAL tone. 1 emoji OK (💄 / 💇 / 💍). Stylist names + service+price.
+- Restaurants: OPERATOR-TO-OPERATOR tone. "covers" / "AOV" / "delivery-heavy".
+  1 emoji OK in casual contexts (🍕 / 🥘).
+- Gyms: COACH-GRADE tone. "ad spend" / "conversion" / "retention".
+- Honor merchant.identity.languages — if "hi" present, mix 2-4 Hindi tokens.
+- Honor category.voice.vocab_taboo absolutely — single taboo word caps the
+  category_fit score (e.g. "guaranteed", "100% safe", "miracle" for dentists).
+
 # DO NOT
 - Use markdown bold (`**bold**`) — WhatsApp doesn't render it; the user sees
   literal asterisks. Use plain text or single-`*emphasis*` (single asterisk).
 - Misclassify a request for help on the trigger's domain as off-topic. If
   the merchant asks "need help auditing my X-ray setup" after a regulation
   about X-ray dose, that IS on-topic — engage and offer concrete help.
+- Drop into promotional/marketing copy ("✨ Special Offer ✨", "AMAZING DEAL!")
+  for ANY category — that's a strong category_fit penalty.
 
 # OUTPUT FORMAT
 Return ONLY this JSON:
@@ -75,6 +91,12 @@ Return ONLY this JSON:
 REPLY_USER_TEMPLATE = """\
 === MODE ===
 {mode}   ({mode_explanation})
+
+=== CATEGORY ({category_slug}) ===
+voice.tone: {voice_tone}
+voice.vocab_allowed (use these terms naturally): {vocab_allowed}
+voice.vocab_taboo (NEVER use): {vocab_taboo}
+voice.salutation_examples: {salutation_examples}
 
 === ORIGINAL TRIGGER ===
 kind: {trigger_kind}
@@ -93,7 +115,7 @@ signals: {signals}
 === MERCHANT'S LATEST REPLY ===
 {latest}
 
-Compose the follow-up now.
+Compose the follow-up now. Honor the category voice strictly.
 """
 
 
@@ -121,6 +143,7 @@ async def compose_follow_up(
         history_lines.append(f"  [{who}]: {body[:240]}")
     history_str = "\n".join(history_lines) or "  (none)"
 
+    voice = (category or {}).get("voice", {}) or {}
     user_msg = REPLY_USER_TEMPLATE.format(
         mode="action" if action_mode else "engaged",
         mode_explanation=(
@@ -128,6 +151,11 @@ async def compose_follow_up(
             if action_mode
             else "Merchant on-topic — advance the thread naturally"
         ),
+        category_slug=(category or {}).get("slug", "unknown"),
+        voice_tone=voice.get("tone", "?"),
+        vocab_allowed=(voice.get("vocab_allowed") or [])[:12],
+        vocab_taboo=voice.get("vocab_taboo") or [],
+        salutation_examples=voice.get("salutation_examples") or [],
         trigger_kind=(trigger or {}).get("kind", "unknown"),
         trigger_payload=(trigger or {}).get("payload", {}),
         identity=identity,
