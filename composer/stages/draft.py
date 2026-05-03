@@ -97,6 +97,8 @@ send_as: {send_as}
 === CATEGORY ({category_slug}) ===
 voice: {voice}
 peer_stats: {peer_stats}
+regulatory_authorities (use for compliance citations): {regulatory_authorities}
+professional_journals (use for research citations): {professional_journals}
 {patient_content_sample}
 
 === MERCHANT ===
@@ -205,6 +207,8 @@ async def draft(
         category_slug=(category or {}).get("slug", "?"),
         voice=(category or {}).get("voice", {}),
         peer_stats=(category or {}).get("peer_stats", {}),
+        regulatory_authorities=(category or {}).get("regulatory_authorities", []),
+        professional_journals=(category or {}).get("professional_journals", []),
         patient_content_sample=sample_lib,
         identity=(merchant or {}).get("identity", {}),
         subscription=(merchant or {}).get("subscription", {}),

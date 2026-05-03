@@ -72,6 +72,19 @@ async def run_tick(
     #    payload so best-time-to-text gate can compute IST hour + category window)
     filtered: list[dict[str, Any]] = []
     skip_reasons: dict[str, int] = {}
+    # Map trigger.kind → required customer.consent.scope value(s).
+    # If trigger is customer-facing and customer.consent.scope doesn't include
+    # the required scope, refuse to send (per challenge-brief §15 ethics).
+    _CONSENT_REQUIRED_BY_KIND = {
+        "recall_due": ("recall_reminders", "recall_alerts"),
+        "appointment_tomorrow": ("appointment_reminders",),
+        "chronic_refill_due": ("refill_reminders", "delivery_notifications"),
+        "trial_followup": ("trial_followup", "promotional_offers"),
+        "customer_lapsed_soft": ("promotional_offers", "winback"),
+        "customer_lapsed_hard": ("promotional_offers", "winback"),
+        "winback_eligible": ("promotional_offers", "winback"),
+        "wedding_package_followup": ("bridal_followup", "promotional_offers"),
+    }
     for trg_id in available_triggers:
         trigger = await store.get_context("trigger", trg_id)
         if not trigger:
@@ -82,6 +95,18 @@ async def run_tick(
         mid = trigger.get("merchant_id")
         if mid:
             merchant_payload = await store.get_context("merchant", mid)
+        # Consent enforcement for customer-facing kinds.
+        cust_id = trigger.get("customer_id")
+        kind = trigger.get("kind", "")
+        if cust_id and kind in _CONSENT_REQUIRED_BY_KIND:
+            customer_payload = await store.get_context("customer", cust_id)
+            scope = ((customer_payload or {}).get("consent") or {}).get("scope") or []
+            required = _CONSENT_REQUIRED_BY_KIND[kind]
+            if not any(r in scope for r in required):
+                skip_reasons[f"consent_missing:{kind}"] = (
+                    skip_reasons.get(f"consent_missing:{kind}", 0) + 1
+                )
+                continue
         ok, reason = await should_send(
             trigger, store, merchant_payload=merchant_payload, now_iso=now_iso
         )
