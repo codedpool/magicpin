@@ -34,6 +34,13 @@ TRIGGER KIND: perf_spike (a metric is UP — views, calls, leads)
   merchant.performance.delta_7d (views_pct/calls_pct) and skip the
   attribution step ("not sure what drove it — what's your best guess?")
   to convert the gap into the asking-the-merchant lever.
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Want me to draft 2 follow-on posts to ride this? Reply YES — live in 10 min."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = "specificity + reciprocity + curiosity. ASKING-THE-MERCHANT: 'what do you think drove the spike?' is high-value — gets domain knowledge from owner + uses production-Vera's biggest-miss lever."

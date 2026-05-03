@@ -39,6 +39,13 @@ satisfy the rule WILL fail validation. Anchor with:
 That is sufficient — no numeric peer stat needed. NEVER invent percentages
 like "121%" or "+45%". If you cannot quote a number from the merchant's
 own performance object verbatim, OMIT the number entirely.
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "1-line reply is enough — Google post + WhatsApp template back in 5 min."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = "asking_the_merchant (1.5×) + reciprocity + low_effort. THIS IS THE LEVER PRODUCTION VERA MOST UNDER-USES — make the ask CRISP and SPECIFIC, not generic. 'What's been most-asked this week?' beats 'How are things?'."

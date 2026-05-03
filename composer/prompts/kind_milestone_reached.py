@@ -39,6 +39,13 @@ TRIGGER KIND: milestone_reached (e.g. 145 reviews, about to cross 150)
   customer_aggregate (e.g. "540 patients YTD"). Pick whichever metric
   is most impressive; do NOT invent.
 - ONE CTA. NEVER stack ("review request AND post AND email" → -5 ENG).
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Reply YES — review-request template + celebratory post drafted in 5 min."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = "specificity (concrete number + gap) + reciprocity + curiosity"

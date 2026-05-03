@@ -40,6 +40,13 @@ TRIGGER KIND: supply_alert (recall on molecule batches — Case Study 9)
   molecule names. Recommend the merchant pull their list to verify.
 - Don't invent customer counts — derive only from merchant.customer_aggregate.
 - ONE CTA. NEVER stack ("draft note AND audit inventory AND..." → -5 ENG).
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Reply YES — customer note + replacement-pickup workflow in 5 min."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = (

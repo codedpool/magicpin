@@ -29,6 +29,13 @@ TRIGGER KIND: renewal_due (subscription expires in N days)
 - First sentence MUST contain the auto-renew recommendation.
 - Cite ONLY numbers from merchant.performance and merchant.subscription.
 - ONE CTA. Binary preferred. NEVER stack ("Reply YES to renew AND ..." → -5).
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Reply YES — auto-renew set up in 60 sec."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = (

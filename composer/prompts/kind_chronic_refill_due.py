@@ -83,6 +83,13 @@ dawai (<molecule list from trigger>) <date> ko khatam hongi.
 Same dose, same brand pack ready hai. <Discount label if eligible> applied —
 total ₹<computed>. Free home delivery to saved address by <time>.
 Reply CONFIRM to dispatch, or call us if any change in dosage."
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Reply CONFIRM to dispatch — packed by 5pm today."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = "trustworthiness + specificity (molecules + date + savings) + low-friction CTA"

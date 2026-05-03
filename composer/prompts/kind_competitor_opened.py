@@ -36,6 +36,13 @@ TRIGGER KIND: competitor_opened (new merchant in same category nearby)
   invent the competitor's name, distance, or specific offer.
 - Don't invent merchant offers — use only status='active' from merchant.offers.
 - ONE CTA. NEVER stack defensive moves into a single Reply YES.
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Reply YES — GBP refresh + new offer copy in 10 min."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = (

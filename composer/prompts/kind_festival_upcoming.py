@@ -32,6 +32,13 @@ TRIGGER KIND: festival_upcoming (Diwali / Holi / Eid / Christmas / Pongal etc.)
   NOT invent a specific festival name or count of days.
 - Don't push promotional/hype tone for clinical categories.
 - ONE CTA.
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Reply YES — drafted festival post in your WhatsApp in 10 min."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = "specificity (festival + days) + reciprocity + category_fit. CONTRARIAN PLAY when warranted: if merchant data shows the obvious festival promo conflicts with their state (e.g. clinical category + Diwali = NOT a sales push), recommend AGAINST it explicitly."

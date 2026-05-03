@@ -28,6 +28,13 @@ This is a CUSTOMER-facing message. send_as = merchant_on_behalf.
 # HARD CONSTRAINTS
 - Use trigger.payload.trial_date + .next_session_options exactly.
 - ONE CTA — multi-choice slot or open-ended.
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Reply 1 / 2 / time — I'll confirm your slot in 30 sec."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = "warmth + specificity (trial_date + slot) + low_friction. HONOR LANGUAGE_PREF — if 'hi-en mix', mix in 2-4 Hindi words ('apke liye', 'jab time mile', 'theek hai'). Pure English when language_pref says hi-en mix loses 2 points."

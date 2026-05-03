@@ -42,6 +42,13 @@ TRIGGER KIND: winback_eligible (subscription lapsed + perf dip + lapsed customer
   .lapsed_customers_added_since_expiry exactly IF PRESENT.
 - 8-12% conversion typical is industry-standard, OK to cite as range.
 - ONE binary CTA. NEVER stack.
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Reply YES — campaign live + first send in 10 min."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = (

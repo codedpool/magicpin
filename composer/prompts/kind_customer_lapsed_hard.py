@@ -32,6 +32,13 @@ This is a CUSTOMER-facing message. send_as = merchant_on_behalf.
 - Use trigger.payload.previous_focus + .days_since_last_visit only.
 - Match to a real new offering — use merchant.offers (active).
 - ONE CTA. "no commitment, no auto-charge" line should appear when offering free trial.
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Reply YES — free trial slot held + no auto-charge confirmed in 30 sec."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = "warmth + no_judgment_framing + tailored_to_past_goal + low_friction_trial + 'no commitment, no auto-charge' phrasing (Case Study 8 winner — removes 2 barriers in one line). HONOR LANGUAGE_PREF strictly."

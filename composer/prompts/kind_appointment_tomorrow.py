@@ -37,6 +37,13 @@ This is a CUSTOMER-facing message. send_as = merchant_on_behalf.
   and ask the customer to confirm than to invent "11 AM Wednesday".
 - Markdown bold (**text**) does NOT render on WhatsApp — write plain text.
 - ONE CTA — binary CONFIRM/RESCHEDULE.
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Reply CONFIRM to lock the slot, RESCHEDULE for new time — handled in 30 sec."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = "specificity (date + service) + helpful_prep_step + binary_commit. HONOR LANGUAGE_PREF strictly — hi-en mix needs Hindi tokens ('kal aapki appointment hai', 'time pehle confirm karein')."

@@ -32,6 +32,13 @@ This is a CUSTOMER-facing message. send_as = merchant_on_behalf.
 - Use trigger.payload.wedding_date + .days_to_wedding + .trial_completed.
 - Program details from merchant.offers (active) — NEVER invent.
 - ONE CTA.
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Reply YES — slot blocked + package draft in 5 min."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = "specificity (days_to_wedding) + relationship_continuity + binary_commitment. HONOR LANGUAGE_PREF — wedding-time customers often prefer warm hi-en mix ('aapki wedding ke liye', 'apke skin-prep program ready hai')."

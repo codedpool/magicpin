@@ -31,6 +31,13 @@ TRIGGER KIND: seasonal_perf_dip (Case Study 7 — gym example)
 - Use trigger.payload.delta_pct + season_note + is_expected_seasonal.
 - Customer count from merchant.customer_aggregate.
 - ONE CTA.
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Want me to draft a retention push for your members? Reply YES — 10 min."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = "anxiety_preemption + reframe + specificity + reciprocity"

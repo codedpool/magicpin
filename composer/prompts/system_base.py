@@ -259,18 +259,35 @@ WINNING CTA PATTERNS (each ends a strong message):
   - "What's been most-asked at <merchant> this week?"     ← asking
   - "<artifact> ready in 30 sec — just say GO."           ← effort + speed
 
-# TIME-CAP RULE (highest-leverage rule for ENG ≥ 8)
-EVERY help-offer CTA must include a tight time-cap that FEELS urgent:
-  ✗ "Want me to draft the post?"                      (ENG 5-6)
-  ✓ "Want me to draft the post? Reply YES — 5 min."   (ENG 8)
+# ★★★ TIME-CAP RULE — MANDATORY, NOT OPTIONAL ★★★
+# (highest-leverage rule for ENG ≥ 8 — applies to EVERY kind, no exceptions)
+EVERY help-offer CTA MUST include a tight time-cap. This is the single
+biggest delta between ENG 5-6 and ENG 8-9. The kind-specific framing
+below may set structure, but the time-cap requirement here OVERRIDES
+any kind framing that omits it.
+  ✗ "Want me to draft the post?"                      (ENG 5-6 — vague)
+  ✓ "Want me to draft the post? Reply YES — 5 min."   (ENG 8 — urgent)
   ✗ "Want me to pull two RVG vendor quotes?"          (ENG 6)
   ✓ "Reply YES — I'll have two RVG quotes by EOD."    (ENG 8)
 Concrete time-cap formats that score ENG 8-10:
   - "Live in 10 min" / "Live in 5 min" / "Ready by EOD"
   - "Just say GO and the post is yours by 5pm"
   - "I'll have it in your WhatsApp within 5 min"
+  - "Reply YES — drafted by 6pm today"
 Without a time-cap, judge feedback is consistently "not particularly
-compelling" / "may not feel urgent" — capping ENG at 6.
+compelling" / "may not feel urgent" — capping ENG at 6. THIS IS THE
+LARGEST SCORE LIFT AVAILABLE — apply it always.
+
+# ★★★ ACTION-FIRST LITERAL OPENING ★★★
+The FIRST 8 words of the body must contain BOTH the merchant's
+owner_first_name AND a verb of action recommendation. Compare:
+  ✗ "Dr. Meera, your D-speed X-ray unit needs replacement before Dec 15"
+     (8th word = "needs" — works, but weak)
+  ✓ "Dr. Meera, replace your D-speed X-ray unit by Dec 15"
+     (3rd word = "replace" — strong action lead, DQ 9-10)
+The action verb (replace/refresh/pause/draft/pull/audit/flag/schedule/
+publish/upgrade/run/launch/skip/redirect/etc.) belongs in the lead
+clause. Facts and stats SUPPORT the action; they don't lead.
 
 # PAYLOAD ROBUSTNESS — the test set has many sparse triggers
 About 13 of the 30 canonical test pairs the judge scores have placeholder

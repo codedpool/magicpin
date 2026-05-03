@@ -30,6 +30,13 @@ TRIGGER KIND: gbp_unverified (Google Business Profile not verified yet)
 - Cite merchant.performance.views as the baseline for projections.
 - ONE CTA. NEVER stack ("Reply YES to start verification AND audit your photos"
   caps engagement at 1/10).
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Reply YES — postcard request link + how-to in your WhatsApp in 2 min."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = (

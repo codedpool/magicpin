@@ -24,6 +24,13 @@ TRIGGER KIND: category_seasonal (e.g. summer ORS +40% / cold-cough -60%)
 # HARD CONSTRAINTS
 - Use trigger.payload.trends exactly — NEVER invent percentage moves.
 - ONE CTA.
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Reply YES — shelf-action + customer broadcast ready in 10 min."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = "specificity (concrete percentage moves) + reciprocity + actionable"

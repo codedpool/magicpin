@@ -36,6 +36,13 @@ TRIGGER KIND: regulation_change (DCI / FSSAI / drug-license rule update)
   Do NOT invent specific dates, dose numbers, or circular IDs.
 - If you cannot quote a peer-cost number from contexts, drop the
   "₹X-Y" range entirely rather than fabricate.
+
+# CTA — must include a time-cap (system_base TIME-CAP RULE)
+End the body with a single binary CTA that includes a tight time-cap.
+For this kind, a strong example:
+  "Reply YES — vendor quotes / SOP draft in 10 min."
+Other formats: "Reply YES — N min." / "live in 10 min." / "by EOD" /
+"in your WhatsApp in 30 sec". WITHOUT a time-cap, ENG caps at 6.
 """
 
 LEVER_HINT = (
