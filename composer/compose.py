@@ -140,6 +140,7 @@ async def compose(
     body = ""
     last_validation = None
     used_variant: str = variant_id
+    draft_dict: dict[str, Any] = {}
 
     for attempt in range(MAX_DRAFT_RETRIES):
         try:
@@ -282,21 +283,28 @@ async def compose(
                     final_body = refined_body
                     final_scores = refined_scores
                     refined_used = True
+                    # Use refined rationale (the polishing model's stated reasoning)
+                    if refined.get("rationale"):
+                        draft_dict["rationale"] = refined["rationale"]
 
     # ─── Stage 6: ASSEMBLE ──────────────────────────────────────────────────
-    rationale = (
-        f"kind={kind} levers={plan_dict.get('compulsion_levers')} "
-        f"language={plan_dict.get('language')} "
-        f"self_scores=DQ:{final_scores.get('decision_quality')}/"
-        f"SPC:{final_scores.get('specificity')}/"
-        f"CAT:{final_scores.get('category_fit')}/"
-        f"MER:{final_scores.get('merchant_fit')}/"
-        f"ENG:{final_scores.get('engagement_compulsion')} "
-        f"total={total(final_scores)}/50 "
-        f"refined={refined_used} "
-        f"variant={used_variant} "
-        f"composer_version={COMPOSER_VERSION}"
-    )
+    # Rationale must be human-readable and reflect ACTUAL reasoning per
+    # case-studies.md cross-rule #9 + testing-brief §14 ("judge sees rationale;
+    # mismatch with body = penalty"). The DRAFT model produces a one-sentence
+    # rationale per its system prompt — use that as the public rationale.
+    # Internal state (kind / levers / scores / variant / composer_version)
+    # stays in ComposedMessage.self_scores + composer_version fields, NOT in
+    # the rationale string.
+    rationale = (draft_dict.get("rationale") or "").strip()
+    if not rationale or len(rationale) < 10:
+        # Model didn't produce a useful rationale — synthesize a concise one
+        # from PLAN that still reads like a sentence (no key=value tokens).
+        levers = plan_dict.get("compulsion_levers") or []
+        levers_str = " + ".join(levers[:2]) if levers else "specificity"
+        rationale = (
+            f"{kind.replace('_', ' ').capitalize()} send anchored on {levers_str}; "
+            f"action-first phrasing matched to merchant state."
+        )
 
     return ComposedMessage(
         body=final_body,
