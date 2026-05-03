@@ -19,6 +19,24 @@ from typing import Any
 _JSON_OBJECT_RE = re.compile(r"\{(?:[^{}]|(?:\{[^{}]*\}))*\}", re.DOTALL)
 
 
+# Strip GFM-style markdown formatters (`**bold**`, `*italic*`, `_underline_`)
+# that don't render natively on WhatsApp — the user sees literal asterisks
+# which looks broken. WhatsApp uses single-`*bold*` and single-`_italic_`,
+# but models trained on GFM emit `**double**`. Easiest fix: strip pairs.
+_MD_BOLD = re.compile(r"\*{2}([^*\n]+?)\*{2}")
+_MD_ITALIC = re.compile(r"(?<![\w*])\*([^*\n]+?)\*(?![\w*])")
+_MD_HEADING = re.compile(r"^#{1,6}\s+", re.MULTILINE)
+
+
+def _strip_markdown(text: str) -> str:
+    if not text:
+        return text
+    text = _MD_BOLD.sub(r"\1", text)
+    text = _MD_ITALIC.sub(r"\1", text)
+    text = _MD_HEADING.sub("", text)
+    return text
+
+
 def _parse_draft_response(raw: str) -> tuple[str, str]:
     """Tolerant parse of DRAFT output. Handles three shapes:
 
@@ -35,7 +53,9 @@ def _parse_draft_response(raw: str) -> tuple[str, str]:
     try:
         parsed = json.loads(raw)
         if isinstance(parsed, dict):
-            return (parsed.get("body") or "").strip(), (parsed.get("rationale") or "").strip()
+            body = _strip_markdown((parsed.get("body") or "").strip())
+            rationale = (parsed.get("rationale") or "").strip()
+            return body, rationale
     except (json.JSONDecodeError, AttributeError):
         pass
     m = _JSON_OBJECT_RE.search(raw)
@@ -44,11 +64,13 @@ def _parse_draft_response(raw: str) -> tuple[str, str]:
             parsed = json.loads(m.group(0))
             if isinstance(parsed, dict) and parsed.get("body"):
                 logger.info("draft.recovered_json_from_prose", extra={"prefix": raw[:80]})
-                return (parsed.get("body") or "").strip(), (parsed.get("rationale") or "(extracted from prose+json)").strip()
+                body = _strip_markdown((parsed.get("body") or "").strip())
+                rationale = (parsed.get("rationale") or "(extracted from prose+json)").strip()
+                return body, rationale
         except (json.JSONDecodeError, AttributeError):
             pass
     logger.warning("draft.malformed_json_fallback_to_raw", extra={"raw": raw[:300]})
-    return raw, "(rationale missing — JSON parse failed)"
+    return _strip_markdown(raw), "(rationale missing — JSON parse failed)"
 
 from core.logging import logger
 from llm.groq_client import get_groq

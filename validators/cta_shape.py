@@ -35,6 +35,7 @@ def _multi_cta_detected(body: str) -> bool:
     """Detect multiple CTAs.
     - Case studies have ≤ 1 question mark; >1 → multiple asks.
     - "Reply YES for X, NO for Y, MAYBE for Z" pattern (3+ word-based alternatives).
+    - "Reply YES to <verb> ... AND <verb> ..." pattern (judging-round leak).
     """
     # Rule 1: more than one question mark anywhere → multi-CTA
     if body.count("?") > 1:
@@ -51,6 +52,32 @@ def _multi_cta_detected(body: str) -> bool:
     word_replies = {m for m in distinct if not m.isdigit()}
     if len(word_replies) >= 3:
         return True
+    # Rule 4: "Reply YES to <verb-clause> and <verb-clause>" — the judging-round
+    # leak. The first round's regulation_change body had:
+    #   "Reply YES to update your SOPs by Dec 15 and confirm your setup is compliant"
+    # which is two stacked actions. Pattern: "Reply (YES|GO|...) to <up-to-80-chars>
+    # \band\b <up-to-80-chars>".
+    if re.search(
+        r"\breply\s+(yes|no|go|y|n|confirm)\s+to\s+[^.!?]{1,120}\band\b\s+[a-z]+",
+        body,
+        re.IGNORECASE,
+    ):
+        return True
+    # Rule 5: "Want me to <verb> X and <verb> Y?" stacking
+    if re.search(
+        r"\bwant me to\s+\w+[^.!?]{1,80}\band\b\s+\w+[^.!?]{1,80}\?",
+        body,
+        re.IGNORECASE,
+    ):
+        # Allow "draft X and send it" (compound but single-action) — only
+        # flag if both verbs are independent action verbs.
+        action_verbs = re.findall(
+            r"\b(draft|pull|send|schedule|update|confirm|book|create|design|set\s+up|build|publish)\b",
+            body,
+            re.IGNORECASE,
+        )
+        if len({v.lower() for v in action_verbs}) >= 3:
+            return True
     return False
 
 

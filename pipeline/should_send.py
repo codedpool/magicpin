@@ -117,8 +117,22 @@ async def should_send(
                            ("not interested", "no thanks", "stop", "later", "busy")):
                         has_recent_negative = True
 
-    # d. Cadence guard — no resend < CADENCE_GUARD_HOURS to same merchant
-    if last_bot_send_at and last_bot_send_at > threshold_cadence:
+    # d. Cadence guard — no resend < CADENCE_GUARD_HOURS to same merchant.
+    # EXCEPTION: high-urgency triggers (≥ 3) bypass cadence — perf_dip,
+    # regulation_change, supply_alert, renewal_due deserve to interrupt.
+    # This was a major leak in the first judging round (lost trigger
+    # coverage when multiple distinct kinds fired within minutes for the
+    # same merchant).
+    urgency_for_cadence = trigger.get("urgency", 1)
+    try:
+        urgency_for_cadence = int(urgency_for_cadence)
+    except (ValueError, TypeError):
+        urgency_for_cadence = 1
+    if (
+        last_bot_send_at
+        and last_bot_send_at > threshold_cadence
+        and urgency_for_cadence < 3
+    ):
         return False, f"cadence_violation_<{settings.CADENCE_GUARD_HOURS}h"
 
     # e. Max sends per 24h

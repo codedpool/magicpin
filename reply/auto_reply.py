@@ -74,24 +74,19 @@ def detect(message: str, conversation: dict[str, Any] | None) -> bool:
 
 
 def escalate(count: int) -> dict[str, Any]:
-    """Return the action JSON for auto-reply escalation level `count` (1, 2, 3+)."""
+    """Return the action JSON for auto-reply escalation level `count` (1, 2, 3+).
+
+    Conservative ladder (judge feedback): don't engage with bots — go straight
+    to wait, end if it persists. Sending a "polite nudge" to an auto-reply
+    looked spammy in scoring.
+    """
     if count == 1:
         return {
-            "action": "send",
-            "body": (
-                "Looks like an auto-reply 😊 When the owner sees this, just reply YES "
-                "and I'll continue from there."
-            ),
-            "cta": "binary_yes_no",
-            "rationale": "Detected auto-reply (1st time). One polite nudge for the owner.",
-        }
-    if count == 2:
-        return {
             "action": "wait",
-            "wait_seconds": 14400,  # 4 hours
-            "rationale": "Auto-reply 2x in a row → owner not at phone. Backing off 4h.",
+            "wait_seconds": 14400,  # 4h — let the owner see their inbox
+            "rationale": "Detected auto-reply (1st). Waiting 4h for the owner.",
         }
     return {
         "action": "end",
-        "rationale": "Auto-reply 3+ times → no engagement signal. Closing conversation.",
+        "rationale": "Auto-reply 2+ times → no engagement signal. Closing conversation.",
     }

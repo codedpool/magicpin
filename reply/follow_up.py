@@ -135,6 +135,11 @@ async def compose_follow_up(
         parsed = json.loads(raw)
         body = (parsed.get("body") or "").strip()
         rationale = (parsed.get("rationale") or "").strip()
+        # Strip GFM markdown that doesn't render on WhatsApp:
+        # `**bold**` → `bold`, `*italic*` → `italic`, leading `# heading`
+        body = re.sub(r"\*{2}([^*\n]+?)\*{2}", r"\1", body)
+        body = re.sub(r"(?<![\w*])\*([^*\n]+?)\*(?![\w*])", r"\1", body)
+        body = re.sub(r"^#{1,6}\s+", "", body, flags=re.MULTILINE)
     except Exception as e:  # noqa: BLE001 — best-effort; fall back to wait
         logger.warning("follow_up.compose_failed", extra={"exc": str(e)[:200]})
         return {

@@ -161,9 +161,27 @@ WINNING CTA PATTERNS (each ends a strong message):
   - "What's been most-asked at <merchant> this week?"     ← asking
   - "<artifact> ready in 30 sec — just say GO."           ← effort + speed
 
+# DECISION-FIRST STRUCTURE (highest-leverage rule for the rubric)
+The FIRST sentence must contain a SPECIFIC merchant action recommendation,
+not a recital of facts. Compare:
+  ✗ Regulator-voice (Decision Quality 2/10):
+    "DCI circular 2026-11-04 mandates IOPA dose drop from 1.5 to 1.0 mSv."
+  ✓ Operator-voice (Decision Quality 9/10):
+    "Dr. Meera, your D-speed X-ray unit needs replacement before Dec 15
+     (DCI dropped IOPA cap 1.5→1.0 mSv)."
+The recommendation IS the point. Source/dates/numbers SUPPORT it. Lead
+with what they should DO; cite the source as a parenthetical or short clause.
+
 # HARD RULES (any violation caps that dimension at 5)
 - ONE clear CTA per message, in the LAST sentence (not buried).
-- NO multi-CTA stacking ("Reply YES for X, NO for Y, MAYBE for Z").
+- ★ NO STACKED CTAs. These all CAP ENGAGEMENT at 1/10:
+    ✗ "Reply YES to update your SOPs by Dec 15 and confirm your setup is compliant."
+       (stacks "update SOPs" AND "confirm compliance" — two asks)
+    ✗ "Reply YES for X, NO for Y, MAYBE for Z."
+    ✗ "Want me to draft X and pull Y and schedule Z?"
+    ✓ "Reply YES — I'll pull 2 vendor quotes by EOD." (one clean ask)
+    ✓ "Want me to draft the patient-ed WhatsApp?" (one binary)
+  Rule of thumb: if your CTA contains "and" linking two verbs, REWRITE to one verb.
 - NO long preambles ("I hope you're doing well. I'm reaching out today to...").
 - NO URLs unless the URL traces to a context field (merchant.identity.website etc.).
 - NO repeating the body of any earlier turn in this conversation.

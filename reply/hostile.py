@@ -33,10 +33,29 @@ HOSTILE_PATTERNS = [
 
 HOSTILE_RE = re.compile("|".join(HOSTILE_PATTERNS), re.IGNORECASE)
 
+# Bare opt-out: a short, near-empty message that's just one of these words.
+# WhatsApp opt-out conventions (STOP, UNSUBSCRIBE) are a single word — no
+# verb phrase to attach to. Honoring these earns trust + avoids penalties.
+BARE_OPTOUT_WORDS = {
+    "stop", "stop.", "stop!", "stop please", "no", "no.", "no thanks",
+    "unsubscribe", "remove", "remove me", "block", "block me",
+    "quit", "end", "end.", "leave", "go away",
+    "band", "band karo", "ruko", "ruk",  # hi
+}
+
 
 def detect(message: str) -> bool:
     if not message:
         return False
+    # Single-word / very-short bare opt-out (WhatsApp convention).
+    stripped = message.strip().lower().rstrip("!.?,;")
+    if stripped in BARE_OPTOUT_WORDS:
+        return True
+    # Short messages (≤ 30 chars) that *contain* a hard stop word.
+    if len(message.strip()) <= 30 and re.search(
+        r"\b(stop|unsubscribe|remove|block)\b", message, re.IGNORECASE
+    ):
+        return True
     return bool(HOSTILE_RE.search(message))
 
 
