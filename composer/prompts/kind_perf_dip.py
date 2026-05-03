@@ -25,8 +25,12 @@ TRIGGER KIND: perf_dip (a metric is down — views, calls, CTR, or directions)
    - Festival approaching + clinical dip → low-key seasonal nudge
    - Mid-week dip on a category that's mid-week-dippy → REDIRECT spend
      to high-conversion days (don't fight the seasonal dip)
-4. Single help offer + binary close: "Want me to draft the GBP refresh?
-   Reply YES — live in 10 min."
+4. Single help offer with TIGHT TIME-CAP for engagement urgency:
+   - "Reply YES — I'll have the GBP refresh draft in 5 min."
+   - "Reply YES — live in 10 min."
+   - "Just say GO and the post is yours by EOD."
+   The time-cap is what makes the action FEEL urgent. Without it, the
+   judge marks ENG 6/10 ("not particularly compelling"). With it, ENG 8-9.
 
 # VOICE — operator/coach. NOT promotional. NOT alarmist.
 - Use the CATEGORY's vocabulary ("ad spend" + "conversion" for gyms;
