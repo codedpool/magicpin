@@ -31,7 +31,13 @@ TRIGGER KIND: supply_alert (recall on molecule batches — Case Study 9)
 # HARD CONSTRAINTS
 - First sentence MUST contain the recommended pharmacist action (flag X
   customers / pull Y units / pause dispensing of Z).
-- Cite trigger.payload.molecule, .affected_batches[], .manufacturer exactly.
+- Cite trigger.payload.molecule, .affected_batches[], .manufacturer exactly
+  IF PRESENT in payload.
+- If payload is sparse (e.g. {"placeholder": true} from generated triggers),
+  anchor on merchant.customer_aggregate.chronic_rx (count) and a generic
+  recall phrasing ("a molecule batch recall affecting some chronic-Rx
+  customers"); do NOT invent batch numbers, manufacturer names, or
+  molecule names. Recommend the merchant pull their list to verify.
 - Don't invent customer counts — derive only from merchant.customer_aggregate.
 - ONE CTA. NEVER stack ("draft note AND audit inventory AND..." → -5 ENG).
 """

@@ -13,20 +13,29 @@ TRIGGER KIND: appointment_tomorrow (booking exists for tomorrow)
 This is a CUSTOMER-facing message. send_as = merchant_on_behalf.
 
 # FRAMING
-1. Open: "Hi {name}, reminder — you have {service} at {merchant_name},
-   {locality} tomorrow at {time}." Use customer.relationship +
-   trigger.payload.
-2. CATEGORY-CORRECT prep instructions:
-   - Dental → "skip food 1h before X-rays if scheduled"
+1. Open: "Hi {name}, reminder — you have your appointment at {merchant_name},
+   {locality} tomorrow." Use customer.identity.name + merchant.identity.
+2. SERVICE / TIME — pick from these sources, in priority order:
+   a. trigger.payload.service / .time / .appointment_at if present
+   b. customer.relationship.services_received[-1] (most recent service)
+      as a likely repeat
+   c. If still nothing, use a generic "your appointment" without making
+      up a specific time. Ask them to confirm the time you have.
+3. CATEGORY-CORRECT prep instructions (skip if it'd require fabricated
+   detail like a specific time):
+   - Dental → "skip food 1h before X-rays if any are scheduled"
    - Salon → "come with hair washed if you're getting a haircut"
    - Gym → "bring water + ID for trial day"
    - Pharmacy → "bring prescription"
-3. Confirm/reschedule CTA: "Reply CONFIRM to confirm, or RESCHEDULE if you
+4. Confirm/reschedule CTA: "Reply CONFIRM to confirm, or RESCHEDULE if you
    need a new time."
 
 # VOICE — warm + helpful. HONOR language_pref.
 # HARD CONSTRAINTS
-- All times/services from customer.relationship + trigger.payload.
+- Times/services from customer.relationship + trigger.payload — never invent
+  a specific time/service if not present. Better to say "your appointment"
+  and ask the customer to confirm than to invent "11 AM Wednesday".
+- Markdown bold (**text**) does NOT render on WhatsApp — write plain text.
 - ONE CTA — binary CONFIRM/RESCHEDULE.
 """
 

@@ -28,7 +28,12 @@ TRIGGER KIND: competitor_opened (new merchant in same category nearby)
 # HARD CONSTRAINTS
 - First sentence MUST contain the merchant-specific defensive action.
 - Cite competitor_name, distance_km, opened_date, their_offer FROM
-  trigger.payload only.
+  trigger.payload IF PRESENT.
+- If payload is sparse (placeholder generated trigger), use generic
+  framing ("a new competitor in your category opened recently in your
+  locality") and pivot to MERCHANT data: their CTR vs peer_median,
+  their review themes, their existing offer differentiation. Do NOT
+  invent the competitor's name, distance, or specific offer.
 - Don't invent merchant offers — use only status='active' from merchant.offers.
 - ONE CTA. NEVER stack defensive moves into a single Reply YES.
 """

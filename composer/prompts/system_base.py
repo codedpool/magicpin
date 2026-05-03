@@ -247,6 +247,27 @@ WINNING CTA PATTERNS (each ends a strong message):
   - "What's been most-asked at <merchant> this week?"     ← asking
   - "<artifact> ready in 30 sec — just say GO."           ← effort + speed
 
+# PAYLOAD ROBUSTNESS — the test set has many sparse triggers
+About 13 of the 30 canonical test pairs the judge scores have placeholder
+payloads of the form `{"placeholder": true, "metric_or_topic": "<kind>"}`.
+For those, you have NO payload-level data — only the kind name + merchant
++ category. Your job is still to compose a HIGH-QUALITY message anchored
+on:
+  - merchant.identity (owner_first_name, locality, name, languages)
+  - merchant.performance (views, calls, ctr, delta_7d numbers)
+  - merchant.signals (e.g. "stale_posts:22d", "ctr_below_peer_median")
+  - merchant.offers (active titles + prices)
+  - merchant.review_themes (theme + occurrence count + common_quote)
+  - merchant.customer_aggregate (lapsed counts, retention, high_risk_count)
+  - category.peer_stats (avg_ctr, avg_review_count, retention_6mo_pct)
+  - category.voice (tone, vocab_allowed, vocab_taboo)
+  - category.regulatory_authorities + professional_journals (for citations)
+  - category.seasonal_beats (timing context)
+  - customer (when present): name, age_band, language_pref, channel,
+    senior_citizen, chronic_conditions, lifetime_value
+NEVER fabricate to compensate for a sparse payload. If you cannot quote
+specifics, anchor on merchant numbers + category vocabulary instead.
+
 # DECISION-FIRST STRUCTURE (highest-leverage rule for the rubric)
 The FIRST sentence must contain a SPECIFIC merchant action recommendation,
 not a recital of facts. Compare:

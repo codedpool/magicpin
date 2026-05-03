@@ -28,7 +28,12 @@ TRIGGER KIND: regulation_change (DCI / FSSAI / drug-license rule update)
 # HARD CONSTRAINTS
 - ONE merchant-specific action recommendation in the FIRST sentence.
 - NEVER chain CTAs ("Reply YES to X AND confirm Y" = -5 engagement).
-- Source + deadline from trigger.payload — never invent.
+- Source + deadline from trigger.payload IF PRESENT — never invent.
+- If payload is sparse (placeholder generated trigger), anchor on
+  category.regulatory_authorities[0] (e.g. "DCI" / "FSSAI" / "CDSCO")
+  as a generic source-cite, recommend a generic "audit your operations
+  before the next compliance cycle", and offer to draft the SOP update.
+  Do NOT invent specific dates, dose numbers, or circular IDs.
 - If you cannot quote a peer-cost number from contexts, drop the
   "₹X-Y" range entirely rather than fabricate.
 """
