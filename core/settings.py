@@ -53,6 +53,9 @@ class Settings(BaseSettings):
     # ─── Bot identity ────────────────────────────────────────────────────────
     BOT_TEAM_NAME: str = "Romanch Roshan Singh"
     BOT_VERSION: str = "1.0.0"
+    # Static submission timestamp — set when the bot is built/submitted.
+    # The judge uses this to pin the version; should NOT be the live clock.
+    BOT_SUBMITTED_AT: str = "2026-05-02T10:00:00Z"
     BOT_CONTACT_EMAIL: str = "romanchroshansingh@gmail.com"
 
     # ─── Runtime tuning ──────────────────────────────────────────────────────
