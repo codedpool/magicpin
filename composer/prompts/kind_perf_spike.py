@@ -30,6 +30,10 @@ TRIGGER KIND: perf_spike (a metric is UP — views, calls, leads)
 - Numbers cited MUST trace to merchant.performance.delta_7d or trigger.payload.
 - Don't invent the driver — only cite what's in payload.likely_driver or
   visible in conversation_history.
+- If payload is sparse (placeholder generated trigger), anchor on
+  merchant.performance.delta_7d (views_pct/calls_pct) and skip the
+  attribution step ("not sure what drove it — what's your best guess?")
+  to convert the gap into the asking-the-merchant lever.
 """
 
 LEVER_HINT = "specificity + reciprocity + curiosity. ASKING-THE-MERCHANT: 'what do you think drove the spike?' is high-value — gets domain knowledge from owner + uses production-Vera's biggest-miss lever."

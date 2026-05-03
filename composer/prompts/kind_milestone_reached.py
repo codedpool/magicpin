@@ -21,7 +21,13 @@ TRIGGER KIND: milestone_reached (e.g. 145 reviews, about to cross 150)
 
 # VOICE — brief, peer-tone. NO confetti emojis or "AMAZING!".
 # HARD CONSTRAINTS
-- Cite trigger.payload.value_now and payload.milestone_value exactly.
+- Cite trigger.payload.value_now and payload.milestone_value exactly
+  IF PRESENT.
+- If payload is sparse (placeholder generated trigger), anchor on
+  merchant.performance numbers (e.g. "your views just crossed 5,000")
+  or merchant.customer_aggregate (e.g. "you've served 540 patients YTD")
+  as the milestone. Pick whichever metric is most impressive in their
+  data; do NOT invent a milestone that doesn't trace.
 - ONE CTA.
 """
 

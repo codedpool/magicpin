@@ -22,9 +22,13 @@ TRIGGER KIND: dormant_with_vera (no merchant message in N days)
 
 # VOICE — warm-operator. NO "are you still there?". NO "haven't heard from you".
 # HARD CONSTRAINTS
-- Don't fabricate the last_topic — use payload only.
+- Don't fabricate the last_topic — use payload only IF PRESENT.
+- If payload is sparse (placeholder generated trigger), skip the
+  last_topic reference entirely. Anchor on merchant.signals (e.g.
+  "stale_posts:22d") or merchant.performance for a concrete revival
+  hook. Generic "haven't heard from you" framing is forbidden.
 - ONE CTA.
-- Days_since_last_merchant_message from payload.
+- Days_since_last_merchant_message from payload IF PRESENT.
 """
 
 LEVER_HINT = "value_first + reciprocity + low_effort_revival"

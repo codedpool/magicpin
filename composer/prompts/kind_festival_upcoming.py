@@ -25,7 +25,11 @@ TRIGGER KIND: festival_upcoming (Diwali / Holi / Eid / Christmas / Pongal etc.)
 5. Open CTA.
 
 # HARD CONSTRAINTS
-- Days_until from trigger.payload, not invented.
+- Festival name + days_until from trigger.payload IF PRESENT.
+- If payload is sparse (placeholder generated trigger), use the current
+  major upcoming festival from category.seasonal_beats; if no beat
+  matches, frame around "the upcoming festival window" generically. Do
+  NOT invent a specific festival name or count of days.
 - Don't push promotional/hype tone for clinical categories.
 - ONE CTA.
 """
