@@ -43,9 +43,19 @@ COMMITMENT_RE = re.compile("|".join(COMMITMENT_PATTERNS), re.IGNORECASE)
 def detect(message: str) -> bool:
     if not message:
         return False
-    # Filter out cases where commitment marker is inside a question
-    # ("is it ok if I ask...?") — quick heuristic.
-    stripped = message.strip()
-    if stripped.endswith("?") and len(stripped) < 80:
+    if not COMMITMENT_RE.search(message):
         return False
-    return bool(COMMITMENT_RE.search(message))
+    stripped = message.strip()
+    # Suppress only if the ENTIRE message is a single short question with
+    # no separate commitment clause — e.g. "is it ok if I ask?". When the
+    # commitment lives in its own clause and a follow-up question trails
+    # it (judge_simulator sends "Ok lets do it. Whats next?"), still treat
+    # as intent. Heuristic: if there's a sentence terminator (. or !) BEFORE
+    # the final ?, the commitment is its own clause → intent transition.
+    if stripped.endswith("?") and len(stripped) < 80:
+        # Multiple sentences? "Ok lets do it. Whats next?" has a "." mid-text.
+        body_before_final_q = stripped[:-1]
+        if any(t in body_before_final_q for t in (".", "!")):
+            return True
+        return False
+    return True
