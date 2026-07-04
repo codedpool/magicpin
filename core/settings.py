@@ -38,17 +38,20 @@ class Settings(BaseSettings):
     GROQ_API_KEY_QUATERNARY: str = Field("", description="Optional 4th Groq key (round-robin)")
     GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
 
-    # ─── Supabase ────────────────────────────────────────────────────────────
-    SUPABASE_URL: str
-    SUPABASE_DB_HOST: str
+    # ─── Supabase (only required when SUPABASE_ENABLED=True) ─────────────────
+    # Default to "" so the bot boots in-memory-only with just a Groq key (local
+    # dev + judge-facing runs don't need Postgres). Production sets these in the
+    # Render env and flips SUPABASE_ENABLED=True.
+    SUPABASE_URL: str = ""
+    SUPABASE_DB_HOST: str = ""
     SUPABASE_DB_PORT: int = 5432
-    SUPABASE_DB_USER: str
-    SUPABASE_DB_PASSWORD: str
+    SUPABASE_DB_USER: str = ""
+    SUPABASE_DB_PASSWORD: str = ""
     SUPABASE_DB_NAME: str = "postgres"
-    SUPABASE_SERVICE_KEY: str
+    SUPABASE_SERVICE_KEY: str = ""
 
     # ─── Admin ───────────────────────────────────────────────────────────────
-    ADMIN_PASSWORD: str
+    ADMIN_PASSWORD: str = "changeme"
 
     # ─── Bot identity ────────────────────────────────────────────────────────
     BOT_TEAM_NAME: str = "Romanch Roshan Singh"

@@ -48,7 +48,10 @@ PRIMARY_MODEL: dict[Purpose, str] = {
 
 # Fallback model per purpose (used on 429 / transient errors)
 FALLBACK_MODEL: dict[Purpose, str] = {
-    Purpose.DRAFT: "openai/gpt-oss-120b",
+    # Fast, high-RPD fallback (14,400 RPD) so a rate-limited DRAFT degrades to a
+    # quick 8B compose instead of the slow gpt-oss-120b reasoning model, which
+    # risked blowing the tick deadline and forcing the generic fallback.
+    Purpose.DRAFT: "llama-3.1-8b-instant",
     Purpose.REFINE: "llama-3.3-70b-versatile",
     Purpose.PLAN: "qwen/qwen3-32b",
     Purpose.SELF_SCORE: "qwen/qwen3-32b",

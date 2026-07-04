@@ -1,11 +1,13 @@
 """
-Phase F+G verification — validators + self-score + refine wired into compose().
+Composer verification — deterministic validators + single-pass compose().
 
-Re-runs the same 3 scenarios from Phase D+E and prints output. The interesting
-gap to close is Scenario 2 (recall_due) which previously didn't honor hi-en mix.
-With the language validator wired in, the pipeline should re-DRAFT until it does.
+`test_validators_unit` (collected by pytest, no network) checks the validator
+pipeline still catches URLs / taboos / fabrication / etc.
 
-Also runs targeted unit tests for individual validators.
+The `_main` script (run manually, needs a dataset/ dir + Groq key) composes 3
+real scenarios and asserts the single-pass contract: a non-empty, jargon-free
+body with a valid cta/send_as. (The old self-score + refine loop was removed —
+see composer/compose.py — so there are no self_scores to assert on.)
 
 Run from submission/:
     PYTHONIOENCODING=utf-8 python -m tests.test_phase_fg
@@ -56,9 +58,7 @@ def _print_msg(label: str, msg, target: str):
     print(f"  send_as:         {msg.send_as}")
     print(f"  cta:             {msg.cta}")
     print(f"  template_name:   {msg.template_name}")
-    print(f"  self_scores:     {msg.self_scores}")
-    total = sum(msg.self_scores.values())
-    print(f"  total:           {total}/50")
+    print(f"  body_len:        {len(msg.body or '')} chars")
     print()
     print("  ─── BODY ──────────────────────────────────────────────────────────────────")
     for line in (msg.body or "").split("\n"):
@@ -204,23 +204,29 @@ async def _main():
 
     await groq.close()
 
-    # Summary
+    # Summary — assert the single-pass contract (structure, not self-scores).
+    from validators import internal_jargon
     msgs = [msg1, msg2, msg3]
-    totals = [sum(m.self_scores.values()) if m else 0 for m in msgs]
-    print("\n─── Phase F+G summary ───")
-    for i, (m, t) in enumerate(zip(msgs, totals), 1):
-        ok = "OK" if m and t >= 35 else "WEAK" if m else "REFUSED"
-        print(f"  Scenario {i}: total={t}/50  status={ok}")
+    print("\n─── composer summary ───")
+    all_ok = True
+    for i, m in enumerate(msgs, 1):
+        if m is None:
+            print(f"  Scenario {i}: REFUSED (returned None)")
+            all_ok = False
+            continue
+        body = m.body or ""
+        jargon_ok, jargon_err, _, _ = internal_jargon.check(body)
+        checks = {
+            "non_empty": len(body) >= 30,
+            "valid_cta": m.cta in ("binary_yes_no", "open_ended", "multi_choice_slot", "none"),
+            "valid_send_as": m.send_as in ("vera", "merchant_on_behalf"),
+            "no_jargon": jargon_ok,
+        }
+        status = "OK" if all(checks.values()) else "FAIL " + str([k for k, v in checks.items() if not v])
+        all_ok = all_ok and all(checks.values())
+        print(f"  Scenario {i}: {status}  (cta={m.cta}, send_as={m.send_as}, {len(body)} chars)")
 
-    if all(m is not None for m in msgs):
-        avg = sum(totals) / len(totals)
-        print(f"\n  Average self-score: {avg:.1f}/50")
-        if avg >= 40:
-            print("  ✅ Phase F+G: average ≥ 40/50 — quality bar met.")
-        else:
-            print("  ⚠️ Phase F+G: average < 40/50 — quality below bar; investigate.")
-    else:
-        print("  ⚠️ Some scenarios returned None.")
+    print("\n  ✅ single-pass contract met." if all_ok else "\n  ⚠️ contract violation — investigate.")
 
 
 if __name__ == "__main__":

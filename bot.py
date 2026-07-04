@@ -199,14 +199,18 @@ async def metadata() -> MetadataResponse:
     return MetadataResponse(
         team_name=settings.BOT_TEAM_NAME,
         team_members=[settings.BOT_TEAM_NAME],  # name(s), not email
-        model="groq-llama-3.3-70b + groq-gpt-oss-120b + groq-llama-3.1-8b + groq-qwen3-32b",
+        model="groq-llama-3.3-70b-versatile (fallback groq-gpt-oss-120b)",
         # ASCII-only "->" instead of unicode "→" — the latter sometimes
         # gets escaped as `â†’` by stdlib JSON output and
         # confuses display tools (the actual judge LLM parses fine).
         approach=(
-            "Multi-stage composer (PLAN -> DRAFT -> VALIDATE -> SELF-SCORE -> REFINE) "
-            "with kind-dispatched prompts, multi-model routing across Groq buckets, "
-            "Supabase write-through state, and 6-detector reply state machine."
+            "Single-pass composer: one aligned LLM call per message, prompted directly "
+            "against the 5-dimension rubric (specificity, category fit, merchant fit, "
+            "trigger relevance, engagement). Each trigger kind gets a short framing; the "
+            "exact fact a trigger references is resolved and surfaced as the anchor so the "
+            "message never loses the concrete number/source. Cheap deterministic guards "
+            "strip fabricated URLs and internal-jargon leaks. Minimal send-gating for "
+            "coverage; Supabase write-through state; conservative reply state machine."
         ),
         contact_email=settings.BOT_CONTACT_EMAIL,
         version=settings.BOT_VERSION,

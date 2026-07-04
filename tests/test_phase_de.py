@@ -1,5 +1,5 @@
 """
-Phase D+E verification — Groq client + composer PLAN→DRAFT pipeline.
+Composer smoke test — Groq client + single-pass compose().
 
 Runs compose() end-to-end against three real seed scenarios and prints output
 for subjective quality evaluation:
@@ -69,7 +69,7 @@ def _print_result(label: str, msg, scenario_target: str):
 
 
 async def _main():
-    print("─── Phase D+E: Groq client + composer PLAN→DRAFT ───")
+    print("─── Composer smoke test: Groq client + single-pass compose() ───")
 
     from composer.compose import compose
     from llm.groq_client import get_groq
